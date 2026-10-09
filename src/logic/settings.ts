@@ -5,7 +5,7 @@ export type Speed = 0.5 | 1 | 2;
 
 export const MODES: { id: Mode; label: string; ready: boolean }[] = [
   { id: 'study', label: 'Знакомство', ready: true },
-  { id: 'trace', label: 'Обводка', ready: false },
+  { id: 'trace', label: 'Обводка', ready: true },
   { id: 'recall', label: 'По памяти', ready: false },
   { id: 'quiz', label: 'Узнавание', ready: false },
 ];

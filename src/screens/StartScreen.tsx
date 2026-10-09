@@ -10,9 +10,17 @@ interface Props {
 
 const MODE_NOTES = {
   study: 'Знак на клетке, чтения и значение. Порядок черт — анимацией, целиком или по одной черте.',
-  trace: 'Обводка по бледному контуру с проверкой каждой черты.',
+  trace:
+    'Обведите знак пальцем по бледному контуру. Черты проверяются по порядку и направлению; после двух ошибок на черте она покажется сама.',
   recall: 'Письмо по памяти на пустой клетке.',
   quiz: 'Выбор из четырёх: чтение, стихия, знак, животное.',
+} as const;
+
+const START_LABELS = {
+  study: 'Смотреть',
+  trace: 'Обводить',
+  recall: 'Писать',
+  quiz: 'Начать',
 } as const;
 
 export function StartScreen({ settings, onChange, onStart }: Props) {
@@ -77,7 +85,7 @@ export function StartScreen({ settings, onChange, onStart }: Props) {
       </section>
 
       <button className="btn btn--primary btn--wide" onClick={onStart}>
-        Смотреть: {deck.title}
+        {START_LABELS[mode]}: {deck.title}
       </button>
 
       {canInstall && (
