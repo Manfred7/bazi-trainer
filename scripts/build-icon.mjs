@@ -10,8 +10,8 @@ const require = createRequire(import.meta.url);
 const DATA = dirname(require.resolve('hanzi-writer-data/package.json'));
 const PUBLIC = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
 
-// Ночное небо и бумага; фон maskable-иконки — в pwa-assets.config.ts
-const BG = '#2E3A66';
+// Киноварь (фирменный цвет приложения) и бумага; фон maskable-иконки — в pwa-assets.config.ts
+const BG = '#B23A2B';
 const FG = '#F5F0E6';
 
 const strokes = (ch) =>

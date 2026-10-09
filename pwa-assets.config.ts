@@ -1,8 +1,8 @@
 import { defineConfig, minimal2023Preset } from '@vite-pwa/assets-generator/config';
 
 // Иконки приложения из public/pwa-icon.svg: `npm run icons`
-// Ночное небо: на иконке 天干 — «небесные стволы», как домен tiangan.ru — в строку (scripts/build-icon.mjs)
-const background = '#2E3A66';
+// Киноварь: на иконке 天干 — «небесные стволы», как домен tiangan.ru — в строку (scripts/build-icon.mjs)
+const background = '#B23A2B';
 
 export default defineConfig({
   headLinkOptions: { preset: '2023' },
