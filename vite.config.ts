@@ -14,7 +14,7 @@ export default defineConfig(({ command, isPreview }) => ({
       includeAssets: ['favicon.svg', 'favicon.ico', 'apple-touch-icon-180x180.png'],
       manifest: {
         name: 'Прописи БаЦзы',
-        short_name: 'БаЦзы',
+        short_name: 'Прописи БаЦзы',
         description: 'Тренажёр написания знаков БаЦзы: 10 небесных стволов и 12 земных ветвей',
         lang: 'ru',
         display: 'standalone',
