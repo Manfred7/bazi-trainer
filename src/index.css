@@ -20,7 +20,8 @@
   --el-wood: #357a31;
   --el-fire: #c2362a;
   --el-earth: #806418;
-  --el-metal: #6a645d;
+  /* Металл — серо-стальной (ТЗ), а не нейтральный серый: серый сливается с тушью */
+  --el-metal: #4a6880;
   --el-water: #5f4fd6;
 
   /* Клетка прописи и бледный контур знака */
@@ -48,7 +49,7 @@
     --el-wood: #74b86c;
     --el-fire: #e3685b;
     --el-earth: #d2ad4a;
-    --el-metal: #b2aba2;
+    --el-metal: #8fb0cc;
     --el-water: #9d92ff;
     --paper: #1b1a18;
     --grid: #4a443b;
