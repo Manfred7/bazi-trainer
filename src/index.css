@@ -23,6 +23,11 @@
   --el-metal: #78726b;
   --el-water: #5f4fd6;
 
+  /* Клетка прописи и бледный контур знака */
+  --paper: #fffdf8;
+  --grid: #d8cdb9;
+  --outline: #e6ddcd;
+
   color-scheme: light;
 }
 
@@ -45,6 +50,9 @@
     --el-earth: #d2ad4a;
     --el-metal: #b2aba2;
     --el-water: #9d92ff;
+    --paper: #1b1a18;
+    --grid: #4a443b;
+    --outline: #36322c;
     color-scheme: dark;
   }
 }
@@ -192,11 +200,105 @@ input:focus-visible {
   padding: 16px 0 8px;
 }
 .start__glyphs {
-  display: grid;
-  grid-template-columns: repeat(8, auto);
-  gap: 10px;
+  font-size: 1.75rem;
+  letter-spacing: 0.15em;
   color: var(--accent);
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+/* ---------- Знак на клетке ---------- */
+
+.player {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.player__stage {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.grid-cell {
+  border: 1.5px solid var(--grid);
+  border-radius: 4px;
+  background: var(--paper);
+}
+.writer {
+  width: 100%;
+  height: 100%;
+  /* Палец рисует, а не прокручивает страницу; без увеличения по двойному тапу */
+  touch-action: none;
+}
+.player__status {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.player__controls {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+.player__controls .btn--small {
+  align-self: stretch;
+  padding: 10px 4px;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.info p {
+  margin: 0;
+}
+.info__reading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.info__ru {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+.info__pinyin {
+  color: var(--muted);
+  font-size: 1.125rem;
+}
+.info__tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.tag {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.tag[class*='el-'] {
+  border-color: var(--el);
+  color: var(--el);
+}
+.info__kind {
+  font-size: 0.8125rem;
+}
+
+/* Четыре режима — сеткой 2×2, чтобы подписи не переносились на телефоне */
+.segmented.segmented--4 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.segmented button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .el-wood { --el: var(--el-wood); }
@@ -204,37 +306,6 @@ input:focus-visible {
 .el-earth { --el: var(--el-earth); }
 .el-metal { --el: var(--el-metal); }
 .el-water { --el: var(--el-water); }
-
-.chars {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 8px;
-}
-.char {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 4px;
-  border-radius: 12px;
-  background: var(--bg);
-  text-align: center;
-}
-.char__hanzi {
-  font-size: 2.5rem;
-  line-height: 1.2;
-  color: var(--el);
-}
-.char__ru {
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-.char__meta {
-  font-size: 0.75rem;
-  color: var(--muted);
-}
 
 .checks {
   list-style: none;
@@ -611,6 +682,9 @@ input:focus-visible {
 /* Знакомство */
 .card--study {
   min-height: 380px;
+  /* Узкие поля — клетка письма получается крупнее */
+  padding: 16px 12px 20px;
+  gap: 16px;
   touch-action: pan-y;
   user-select: none;
 }
