@@ -315,6 +315,25 @@ input:focus-visible {
 .info__kind {
   font-size: 0.8125rem;
 }
+.tag--muted {
+  color: var(--muted);
+}
+
+/* Задание «По памяти»: что писать */
+.ask {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.ask p {
+  margin: 0;
+}
+.ask__reading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
 
 /* Четыре режима — сеткой 2×2, чтобы подписи не переносились на телефоне */
 .segmented.segmented--4 {

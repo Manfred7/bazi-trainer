@@ -4,14 +4,12 @@ import { SessionTop } from '../components/SessionTop';
 import { WritingBoard } from '../components/WritingBoard';
 import type { BaziChar } from '../data/characters';
 import { strokeCount } from '../data/strokes';
-
-export interface WriteResult {
-  char: BaziChar;
-  mistakes: number;
-}
+import { type WriteResult, isPass } from '../logic/session';
 
 interface Props {
   chars: BaziChar[];
+  /** Знак обведён впервые в сессии: записываем в прогресс */
+  onResult: (r: WriteResult) => void;
   onFinish: (results: WriteResult[]) => void;
   onExit: () => void;
 }
@@ -20,7 +18,7 @@ interface Props {
 const HINT_AFTER = 2;
 
 /** Режим «Обводка»: пишем по бледному контуру, каждая черта проверяется */
-export function TraceScreen({ chars, onFinish, onExit }: Props) {
+export function TraceScreen({ chars, onResult, onFinish, onExit }: Props) {
   const [index, setIndex] = useState(0);
   const [results, setResults] = useState<WriteResult[]>([]);
   const [attempt, setAttempt] = useState(0);
@@ -32,20 +30,28 @@ export function TraceScreen({ chars, onFinish, onExit }: Props) {
   const total = strokeCount(char.hanzi);
   const last = index === chars.length - 1;
 
-  const restart = () => {
+  const reset = () => {
     setWritten(0);
     setMistakes(0);
     setDone(false);
     setAttempt((a) => a + 1);
   };
 
+  const complete = (m: number) => {
+    setMistakes(m);
+    setDone(true);
+    // В счёт идёт первая попытка: «Заново» — для практики, на прогресс не влияет
+    if (results.length === index) {
+      const r = { char, mistakes: m, ok: isPass(m) };
+      setResults([...results, r]);
+      onResult(r);
+    }
+  };
+
   const next = () => {
-    // В итог идёт последняя попытка по знаку
-    const all = [...results, { char, mistakes }];
-    if (last) return onFinish(all);
-    setResults(all);
+    if (last) return onFinish(results);
     setIndex((i) => i + 1);
-    restart();
+    reset();
   };
 
   useEffect(() => {
@@ -69,12 +75,9 @@ export function TraceScreen({ chars, onFinish, onExit }: Props) {
           attempt={attempt}
           onStroke={setWritten}
           onMistake={setMistakes}
-          onComplete={(m) => {
-            setMistakes(m);
-            setDone(true);
-          }}
+          onComplete={complete}
         />
-        <p className={`player__status ${done ? (mistakes ? 'is-bad' : 'is-ok') : ''}`}>
+        <p className={`player__status ${done ? (isPass(mistakes) ? 'is-ok' : 'is-bad') : ''}`}>
           {done
             ? mistakes
               ? `Готово · ошибок: ${mistakes}`
@@ -85,10 +88,10 @@ export function TraceScreen({ chars, onFinish, onExit }: Props) {
       </section>
 
       <div className="study__nav">
-        <button className="btn" onClick={restart}>
+        <button className="btn" onClick={reset}>
           ↺ Заново
         </button>
-        <button className="btn btn--primary" onClick={next} disabled={!done}>
+        <button className="btn btn--primary" onClick={next} disabled={results.length <= index}>
           {last ? 'Итоги' : 'Дальше →'}
         </button>
       </div>

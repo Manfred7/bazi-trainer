@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { PracticeGrid } from './PracticeGrid';
 import { useHanziWriter } from './useHanziWriter';
 import { useSquareSize } from './useSquareSize';
@@ -8,6 +8,14 @@ export interface BoardCallbacks {
   onStroke?: (written: number) => void;
   onMistake?: (totalMistakes: number) => void;
   onComplete: (totalMistakes: number) => void;
+}
+
+/** Команды доске от экрана */
+export interface BoardHandle {
+  /** Показать киноварью черту, которую надо писать сейчас */
+  hint: () => void;
+  /** Проиграть порядок черт всего знака (после того как он написан) */
+  animate: () => void;
 }
 
 interface Props extends BoardCallbacks {
@@ -23,7 +31,10 @@ interface Props extends BoardCallbacks {
 const FLASH_MS = 350;
 
 /** Клетка для письма пальцем: Hanzi Writer проверяет каждую черту по порядку и направлению */
-export function WritingBoard({ hanzi, outline, hintAfterMisses, attempt, ...callbacks }: Props) {
+export const WritingBoard = forwardRef<BoardHandle, Props>(function WritingBoard(
+  { hanzi, outline, hintAfterMisses, attempt, ...callbacks },
+  handle,
+) {
   const { ref, size } = useSquareSize();
   const { target, writer } = useHanziWriter(hanzi, size, {
     showOutline: outline,
@@ -34,14 +45,19 @@ export function WritingBoard({ hanzi, outline, hintAfterMisses, attempt, ...call
   // Колбэки читаются из ref, чтобы новый рендер родителя не перезапускал проверку
   const cb = useRef(callbacks);
   cb.current = callbacks;
+  const written = useRef(0);
 
   useEffect(() => {
     if (!writer) return;
+    written.current = 0;
     writer.quiz({
       showHintAfterMisses: hintAfterMisses,
       acceptBackwardsStrokes: false,
       highlightOnComplete: true,
-      onCorrectStroke: (s) => cb.current.onStroke?.(s.strokeNum + 1),
+      onCorrectStroke: (s) => {
+        written.current = s.strokeNum + 1;
+        cb.current.onStroke?.(written.current);
+      },
       onMistake: (s) => {
         setFlash((f) => f + 1);
         cb.current.onMistake?.(s.totalMistakes);
@@ -57,6 +73,15 @@ export function WritingBoard({ hanzi, outline, hintAfterMisses, attempt, ...call
     return () => clearTimeout(t);
   }, [flash]);
 
+  useImperativeHandle(
+    handle,
+    () => ({
+      hint: () => writer?.highlightStroke(written.current),
+      animate: () => writer?.animateCharacter(),
+    }),
+    [writer],
+  );
+
   return (
     <div ref={ref} className="player__stage">
       <PracticeGrid size={size} miss={flash > 0}>
@@ -64,4 +89,4 @@ export function WritingBoard({ hanzi, outline, hintAfterMisses, attempt, ...call
       </PracticeGrid>
     </div>
   );
-}
+});
