@@ -26,14 +26,15 @@ function glyph(ch, x, y, s) {
   return `<g fill="${FG}" transform="translate(${x.toFixed(2)},${ty.toFixed(2)}) scale(${s},${-s})">${strokes(ch)}</g>`;
 }
 
-// 512×512: 天 над 干, оба в безопасной зоне maskable (центральный круг 80%)
-const s = 0.19;
-const x = (512 - 1024 * s) / 2;
-const top = (512 - 2 * 1024 * s) / 2;
+// 512×512: 天干 в строку. Android-лаунчеры обрезают значок в круг (иногда с рамкой),
+// столбик упирался в края; строка ложится в круг с запасом (углы ≈ 75% радиуса)
+const s = 0.16;
+const left = (512 - 2 * 1024 * s) / 2;
+const y = (512 - 1024 * s) / 2;
 const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="${BG}"/>
-  ${glyph('天', x, top, s)}
-  ${glyph('干', x, top + 1024 * s, s)}
+  ${glyph('天', left, y, s)}
+  ${glyph('干', left + 1024 * s, y, s)}
 </svg>
 `;
 
