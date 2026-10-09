@@ -1,11 +1,11 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 const YEAR = 60 * 60 * 24 * 365
 
 // https://vite.dev/config/
-export default defineConfig(({ command, isPreview }) => ({
+export default defineConfig(({ command, isPreview, mode }) => ({
   plugins: [
     react(),
     VitePWA({
@@ -52,5 +52,6 @@ export default defineConfig(({ command, isPreview }) => ({
     }),
   ],
   // GitHub Pages отдаёт сайт из подпапки /bazi-trainer/ (и vite preview тоже); dev-сервер остаётся в корне
-  base: command === 'build' || isPreview ? '/bazi-trainer/' : '/',
+  // На своём домене (tiangan.ru) сайт в корне: сборка с BASE_PATH=/
+  base: command === 'build' || isPreview ? (loadEnv(mode, '.', 'BASE_PATH').BASE_PATH || '/bazi-trainer/') : '/',
 }))

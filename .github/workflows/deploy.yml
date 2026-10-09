@@ -40,3 +40,42 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Свой домен на Beget: та же сборка, но из корня сайта; выкладка rsync по SSH-ключу
+  beget:
+    runs-on: ubuntu-latest
+    env:
+      BEGET_HOST: manfreqm@manfreqm.beget.tech
+      BEGET_DIR: tiangan.ru/public_html
+      # Отпечаток сервера Beget — чтобы не доверять первому встречному ключу
+      BEGET_KNOWN_HOST: manfreqm.beget.tech ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPtq49kNEXd23IlSA3IrJYs6PLjmMFB/05P8kYZotw6P
+      HAS_KEY: ${{ secrets.BEGET_SSH_KEY != '' }}
+    steps:
+      - if: env.HAS_KEY != 'true'
+        run: echo "Секрет BEGET_SSH_KEY не задан — выкладка на Beget пропущена"
+      - if: env.HAS_KEY == 'true'
+        uses: actions/checkout@v4
+      - if: env.HAS_KEY == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - if: env.HAS_KEY == 'true'
+        run: npm ci
+      - if: env.HAS_KEY == 'true'
+        run: npm run build
+        env:
+          BASE_PATH: /
+      - if: env.HAS_KEY == 'true'
+        name: Выкладка на Beget
+        env:
+          BEGET_SSH_KEY: ${{ secrets.BEGET_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$BEGET_SSH_KEY" > ~/.ssh/beget
+          chmod 600 ~/.ssh/beget
+          printf '%s\n' "$BEGET_KNOWN_HOST" > ~/.ssh/known_hosts
+          # --delete убирает файлы старых версий; служебные cgi-bin и .htaccess Beget не трогаем
+          rsync -rlz --delete --exclude cgi-bin --exclude .htaccess \
+            -e "ssh -i ~/.ssh/beget -o IdentitiesOnly=yes -o BatchMode=yes" \
+            dist/ "$BEGET_HOST:$BEGET_DIR/"
