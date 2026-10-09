@@ -2,8 +2,6 @@ import HanziWriter, { type HanziWriterOptions } from 'hanzi-writer';
 import { useEffect, useRef, useState } from 'react';
 import { strokeData } from '../data/strokes';
 
-const DARK = '(prefers-color-scheme: dark)';
-
 /** Цвета холста из CSS-переменных темы: тушь, контур, киноварь для подсказок */
 function themeColors() {
   const css = getComputedStyle(document.documentElement);
@@ -55,13 +53,13 @@ export function useHanziWriter(hanzi: string, size: number, options: Partial<Han
 
   useEffect(() => {
     if (!writer) return;
-    const media = window.matchMedia(DARK);
-    const onTheme = () => {
+    // Тема меняется атрибутом data-theme на <html> (src/logic/theme.ts)
+    const observer = new MutationObserver(() => {
       const colors = themeColors();
       (Object.keys(colors) as (keyof typeof colors)[]).forEach((k) => writer.updateColor(k, colors[k]));
-    };
-    media.addEventListener('change', onTheme);
-    return () => media.removeEventListener('change', onTheme);
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
   }, [writer]);
 
   return { target, writer };

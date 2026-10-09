@@ -6,8 +6,19 @@
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
-    <meta name="theme-color" content="#F5F0E6" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#161514" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#F5F0E6" />
+    <script>
+      // Тема до первой отрисовки, чтобы не мелькала другая (дальше — src/logic/theme.ts)
+      (function () {
+        var theme = 'system';
+        try {
+          theme = JSON.parse(localStorage.getItem('bazi-trainer:settings') || '{}').theme || 'system';
+        } catch (e) {}
+        var dark = theme === 'dark' || (theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#161514' : '#F5F0E6');
+      })();
+    </script>
     <meta name="apple-mobile-web-app-title" content="Прописи" />
     <meta name="description" content="Тренажёр написания знаков БаЦзы: небесные стволы и земные ветви" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />

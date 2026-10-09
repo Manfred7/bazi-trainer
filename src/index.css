@@ -32,30 +32,29 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --bg: #161514;
-    --surface: #211f1c;
-    --ink: #ede6d6;
-    --muted: #9a9284;
-    --border: #34302a;
-    --accent: #d2574a;
-    --accent-ink: #161514;
-    --ok: #7fae8a;
-    --ok-bg: #22302a;
-    --bad: #d27a6a;
-    --bad-bg: #3a2522;
-    --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 30%);
-    --el-wood: #74b86c;
-    --el-fire: #e3685b;
-    --el-earth: #d2ad4a;
-    --el-metal: #c9cdd2;
-    --el-water: #9d92ff;
-    --paper: #1b1a18;
-    --grid: #4a443b;
-    --outline: #4b453c;
-    color-scheme: dark;
-  }
+/* Тёмная тема: data-theme ставит src/logic/theme.ts (и скрипт в index.html до первой отрисовки) */
+:root[data-theme='dark'] {
+  --bg: #161514;
+  --surface: #211f1c;
+  --ink: #ede6d6;
+  --muted: #9a9284;
+  --border: #34302a;
+  --accent: #d2574a;
+  --accent-ink: #161514;
+  --ok: #7fae8a;
+  --ok-bg: #22302a;
+  --bad: #d27a6a;
+  --bad-bg: #3a2522;
+  --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 30%);
+  --el-wood: #74b86c;
+  --el-fire: #e3685b;
+  --el-earth: #d2ad4a;
+  --el-metal: #c9cdd2;
+  --el-water: #9d92ff;
+  --paper: #1b1a18;
+  --grid: #4a443b;
+  --outline: #4b453c;
+  color-scheme: dark;
 }
 
 *,

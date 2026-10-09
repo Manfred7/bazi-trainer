@@ -1,5 +1,6 @@
 import { DECKS } from './decks';
 import { DIRECTIONS } from './quiz';
+import { THEMES, type Theme } from './theme';
 
 export type Mode = 'study' | 'trace' | 'recall' | 'quiz';
 export type Speed = 0.5 | 1 | 2;
@@ -33,6 +34,7 @@ export interface Settings {
   directionIds: string[];
   /** Все колоды доступны сразу, без порога */
   unlockAll: boolean;
+  theme: Theme;
 }
 
 const KEY = 'bazi-trainer:settings';
@@ -45,6 +47,7 @@ const DEFAULTS: Settings = {
   quizLength: 20,
   directionIds: DIRECTIONS.map((d) => d.id),
   unlockAll: false,
+  theme: 'system',
 };
 
 export function loadSettings(): Settings {
@@ -62,6 +65,7 @@ export function loadSettings(): Settings {
       quizLength: QUIZ_LENGTHS.includes(parsed.quizLength ?? 0) ? parsed.quizLength! : DEFAULTS.quizLength,
       directionIds: directionIds.length ? directionIds : DEFAULTS.directionIds,
       unlockAll: parsed.unlockAll === true,
+      theme: THEMES.some((t) => t.id === parsed.theme) ? parsed.theme! : DEFAULTS.theme,
     };
   } catch {
     return DEFAULTS;

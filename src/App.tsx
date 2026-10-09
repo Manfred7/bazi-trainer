@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { BaziChar } from './data/characters';
 import { DECKS, type Deck, deckById, isAvailable, withUnlocks } from './logic/decks';
 import {
@@ -13,6 +13,7 @@ import {
 import { DIRECTIONS, type Direction, type QuizAnswer, isCorrect, quizMastery, quizTrack } from './logic/quiz';
 import type { WriteResult } from './logic/session';
 import { type Settings, loadSettings, saveSettings } from './logic/settings';
+import { watchTheme } from './logic/theme';
 import { QuizScreen } from './screens/QuizScreen';
 import { RecallScreen } from './screens/RecallScreen';
 import { ResultScreen, type SessionSummary } from './screens/ResultScreen';
@@ -53,6 +54,8 @@ export default function App() {
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [progress, setProgress] = useState<Progress>(loadProgress);
   const [screen, setScreen] = useState<Screen>({ name: 'start' });
+
+  useEffect(() => watchTheme(settings.theme), [settings.theme]);
 
   const directions = DIRECTIONS.filter((d) => settings.directionIds.includes(d.id));
   const available = (d: Deck) => isAvailable(d, settings.mode, progress, settings.unlockAll);

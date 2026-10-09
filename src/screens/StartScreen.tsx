@@ -4,6 +4,7 @@ import { type Progress, UNLOCK_SHARE, mastery } from '../logic/progress';
 import { DIRECTIONS, canAsk, quizMastery } from '../logic/quiz';
 import { PASS_MISTAKES } from '../logic/session';
 import { MODES, QUIZ_LENGTHS, SESSION_LENGTHS, type Settings } from '../logic/settings';
+import { THEMES } from '../logic/theme';
 
 interface Props {
   settings: Settings;
@@ -201,6 +202,24 @@ export function StartScreen({ settings, progress, deck, onChange, onResetProgres
       {iosHint && (
         <p className="hint">Чтобы установить на iPhone: «Поделиться» → «На экран „Домой“». Работает и без интернета.</p>
       )}
+
+      <section className="panel">
+        <h2>Тема</h2>
+        <div className="segmented" role="radiogroup" aria-label="Тема">
+          {THEMES.map((t) => (
+            <button
+              key={t.id}
+              role="radio"
+              aria-checked={settings.theme === t.id}
+              className={settings.theme === t.id ? 'is-on' : ''}
+              onClick={() => onChange({ ...settings, theme: t.id })}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <p className="panel__note">«Авто» — как в настройках телефона.</p>
+      </section>
 
       <button className="btn btn--ghost btn--small" onClick={reset}>
         Сбросить прогресс
