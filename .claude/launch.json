@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "bazi-trainer",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5175", "--strictPort", "--host", "127.0.0.1"],
+      "port": 5175
+    },
+    {
+      "name": "bazi-trainer-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "preview", "--", "--port", "4175", "--strictPort", "--host", "127.0.0.1"],
+      "port": 4175
+    }
+  ]
+}
