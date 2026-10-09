@@ -319,6 +319,38 @@ input:focus-visible {
   color: var(--muted);
 }
 
+/* Узнавание: вопрос и варианты */
+.ask__hanzi {
+  font-size: 7rem;
+  line-height: 1.1;
+}
+.ask__hanzi.is-colored {
+  font-size: 5rem;
+  color: var(--el);
+}
+.ask__big {
+  font-family: var(--font-serif);
+  font-size: 2.75rem;
+  font-weight: 600;
+}
+.answer__hanzi {
+  font-size: 2.75rem;
+  font-weight: 400;
+  line-height: 1;
+}
+.answer__text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+}
+.answer__sub {
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
 /* Задание «По памяти»: что писать */
 .ask {
   display: flex;

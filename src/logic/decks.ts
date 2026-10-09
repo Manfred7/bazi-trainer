@@ -30,9 +30,9 @@ export const deckById = (id: string) => DECKS.find((d) => d.id === id) ?? DECKS[
 export const isUnlocked = (deck: Deck, p: Progress, unlockAll: boolean) =>
   unlockAll || !deck.requires || p.unlocked.includes(deck.id);
 
-/** Знакомиться и обводить можно любую колоду; письмо по памяти и узнавание — по порогу */
+/** По порогу открывается только письмо по памяти; знакомство, обводка и узнавание — для любой колоды */
 export const isAvailable = (deck: Deck, mode: Mode, p: Progress, unlockAll: boolean) =>
-  mode === 'study' || mode === 'trace' || isUnlocked(deck, p, unlockAll);
+  mode !== 'recall' || isUnlocked(deck, p, unlockAll);
 
 /** Открывает колоды, у которых требуемая освоена по памяти на UNLOCK_SHARE */
 export function withUnlocks(p: Progress): Progress {

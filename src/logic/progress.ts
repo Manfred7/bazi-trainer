@@ -7,8 +7,8 @@ export const MASTERED_LEVEL = 3;
 /** Доля освоенных знаков, при которой открывается следующая колода */
 export const UNLOCK_SHARE = 0.8;
 
-/** Режимы с проверкой, по которым ведётся прогресс */
-export type Track = 'trace' | 'recall';
+/** По чему ведётся прогресс: письмо (обводка, по памяти) и каждое направление узнавания */
+export type Track = 'trace' | 'recall' | `quiz:${string}`;
 
 export interface PairStats {
   level: number;

@@ -10,6 +10,8 @@ export interface SessionSummary {
 }
 
 interface Props {
+  /** Письмо — считаем ошибки в чертах; узнавание — неверные ответы */
+  kind: 'write' | 'quiz';
   results: WriteResult[];
   summary: SessionSummary;
   onRetryMistakes: (chars: BaziChar[]) => void;
@@ -19,8 +21,8 @@ interface Props {
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
-/** Итоги сессии письма: сколько засчитано, как вырос прогресс, что стоит повторить */
-export function ResultScreen({ results, summary, onRetryMistakes, onRestart, onMenu }: Props) {
+/** Итоги сессии: сколько засчитано, как вырос прогресс, что стоит повторить */
+export function ResultScreen({ kind, results, summary, onRetryMistakes, onRestart, onMenu }: Props) {
   const passed = results.filter((r) => r.ok).length;
 
   // По памяти знак может выпасть несколько раз — собираем по знаку
@@ -40,7 +42,7 @@ export function ResultScreen({ results, summary, onRetryMistakes, onRestart, onM
         <div className="result__pct">
           {passed}/{results.length}
         </div>
-        <p className="muted">знаков засчитано</p>
+        <p className="muted">{kind === 'quiz' ? 'ответов верно' : 'знаков засчитано'}</p>
       </section>
 
       <section className="panel result__mastery">
@@ -73,15 +75,16 @@ export function ResultScreen({ results, summary, onRetryMistakes, onRestart, onM
                   </span>
                 </span>
                 <span className="mistakes__count">
-                  ошибок: {mistakes}
-                  {times > 1 && ` (${times} раза)`}
+                  {kind === 'quiz'
+                    ? `×${times}`
+                    : `ошибок: ${mistakes}${times > 1 ? ` (${times} раза)` : ''}`}
                 </span>
               </li>
             ))}
           </ul>
         </section>
       ) : (
-        <p className="result__perfect">Все знаки засчитаны</p>
+        <p className="result__perfect">{kind === 'quiz' ? 'Без ошибок' : 'Все знаки засчитаны'}</p>
       )}
 
       <div className="result__actions">

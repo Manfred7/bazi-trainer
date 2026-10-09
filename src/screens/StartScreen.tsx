@@ -1,8 +1,9 @@
 import { DECKS, type Deck, deckById, isAvailable } from '../logic/decks';
 import { useInstall } from '../logic/install';
 import { type Progress, UNLOCK_SHARE, mastery } from '../logic/progress';
+import { DIRECTIONS, canAsk, quizMastery } from '../logic/quiz';
 import { PASS_MISTAKES } from '../logic/session';
-import { MODES, SESSION_LENGTHS, type Settings } from '../logic/settings';
+import { MODES, QUIZ_LENGTHS, SESSION_LENGTHS, type Settings } from '../logic/settings';
 
 interface Props {
   settings: Settings;
@@ -21,7 +22,7 @@ const MODE_NOTES = {
   trace:
     'Обведите знак пальцем по бледному контуру. Черты проверяются по порядку и направлению; после двух ошибок на черте она покажется сама.',
   recall: `Пустая клетка, сверху чтение и значение — напишите знак целиком. Подсказка по кнопке считается ошибкой; знак засчитан, если ошибок не больше ${PASS_MISTAKES}.`,
-  quiz: 'Выбор из четырёх: чтение, стихия, знак, животное. Появится в следующей версии.',
+  quiz: 'Выбор из четырёх. Чем лучше знаете знак, тем труднее неверные варианты: сначала случайные, потом той же стихии, потом похожие по виду (己/巳, 戊/戌, 未/末, 辛/幸).',
 } as const;
 
 const START_LABELS = {
@@ -35,6 +36,14 @@ export function StartScreen({ settings, progress, deck, onChange, onResetProgres
   const { canInstall, iosHint, install } = useInstall();
   const { mode } = settings;
   const track = mode === 'trace' || mode === 'recall' ? mode : null;
+  const directions = DIRECTIONS.filter((d) => settings.directionIds.includes(d.id));
+  const deckMastery = (chars: Deck['chars']) =>
+    mode === 'quiz' ? quizMastery(progress, chars, directions) : track ? mastery(progress, chars, track) : 0;
+  const canStart = mode !== 'quiz' || canAsk(deck.chars, directions);
+  const toggle = (id: string) => {
+    const has = settings.directionIds.includes(id);
+    onChange({ ...settings, directionIds: has ? settings.directionIds.filter((d) => d !== id) : [...settings.directionIds, id] });
+  };
 
   const reset = () => {
     if (window.confirm('Сбросить весь прогресс? Открытые колоды снова закроются.')) onResetProgress();
@@ -59,7 +68,6 @@ export function StartScreen({ settings, progress, deck, onChange, onResetProgres
               role="radio"
               aria-checked={mode === m.id}
               className={mode === m.id ? 'is-on' : ''}
-              disabled={!m.ready}
               onClick={() => onChange({ ...settings, mode: m.id })}
             >
               {m.label}
@@ -82,7 +90,7 @@ export function StartScreen({ settings, progress, deck, onChange, onResetProgres
           {DECKS.map((d) => {
             const open = isAvailable(d, mode, progress, settings.unlockAll);
             const on = d.id === deck.id;
-            const m = track ? mastery(progress, d.chars, track) : 0;
+            const m = deckMastery(d.chars);
             return (
               <li key={d.id}>
                 <button
@@ -100,7 +108,7 @@ export function StartScreen({ settings, progress, deck, onChange, onResetProgres
                         : `Нужно ${pct(UNLOCK_SHARE)} по памяти: ${deckById(d.requires!).title}`}
                     </span>
                   </span>
-                  {open && track ? (
+                  {open && mode !== 'study' ? (
                     <span className="deck__progress">
                       <span className="deck__pct">{pct(m)}</span>
                       <span className="bar bar--small">
@@ -117,9 +125,11 @@ export function StartScreen({ settings, progress, deck, onChange, onResetProgres
             );
           })}
         </ul>
-        {track && (
+        {mode !== 'study' && (
           <p className="panel__note">
-            Процент — знаки, которые {track === 'trace' ? 'обведены' : 'написаны по памяти'} верно несколько раз подряд.
+            {mode === 'quiz'
+              ? 'Процент — пары «знак × направление», на которые вы верно ответили несколько раз подряд.'
+              : `Процент — знаки, которые ${mode === 'trace' ? 'обведены' : 'написаны по памяти'} верно несколько раз подряд.`}
           </p>
         )}
       </section>
@@ -143,9 +153,45 @@ export function StartScreen({ settings, progress, deck, onChange, onResetProgres
         </section>
       )}
 
-      <button className="btn btn--primary btn--wide" onClick={onStart}>
+      {mode === 'quiz' && (
+        <>
+          <section className="panel">
+            <h2>Направления</h2>
+            <ul className="checks">
+              {DIRECTIONS.map((d) => (
+                <li key={d.id}>
+                  <label className="check">
+                    <input type="checkbox" checked={settings.directionIds.includes(d.id)} onChange={() => toggle(d.id)} />
+                    <span>{d.label}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+            <p className="panel__note">«Животное → ветвь» спрашивается только по земным ветвям.</p>
+          </section>
+          <section className="panel">
+            <h2>Вопросов за сессию</h2>
+            <div className="segmented" role="radiogroup" aria-label="Вопросов за сессию">
+              {QUIZ_LENGTHS.map((n) => (
+                <button
+                  key={n}
+                  role="radio"
+                  aria-checked={settings.quizLength === n}
+                  className={settings.quizLength === n ? 'is-on' : ''}
+                  onClick={() => onChange({ ...settings, quizLength: n })}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
+      <button className="btn btn--primary btn--wide" disabled={!canStart} onClick={onStart}>
         {START_LABELS[mode]}: {deck.title}
       </button>
+      {!canStart && <p className="hint">Выберите направление, подходящее для этой колоды</p>}
 
       {canInstall && (
         <button className="btn btn--wide" onClick={install}>
