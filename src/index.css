@@ -740,6 +740,334 @@ input:focus-visible {
   font-weight: 600;
 }
 
+/* ---------- Путь знака ---------- */
+
+.screen__title {
+  font-size: 1.375rem;
+}
+
+.ladder {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.ladder li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 2px;
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--muted);
+}
+.ladder li.is-on {
+  color: var(--ink);
+}
+.ladder__n {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.ladder li.is-on .ladder__n {
+  color: var(--accent);
+}
+.ladder__label {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* Печати: освоен целиком — киноварь, только по памяти — рамка, в работе — тушь, не начат — бледно */
+.seals {
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  gap: 4px;
+}
+.seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  min-width: 26px;
+  border-radius: 4px;
+  border: 1.5px solid transparent;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+.seal--lg {
+  font-size: 2rem;
+  min-width: 48px;
+}
+.seal--none {
+  color: var(--outline);
+}
+.seal--learning {
+  color: var(--ink);
+  background: var(--bg);
+}
+.seal--heart {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.seal--done {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.stage-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--bg);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.pips {
+  display: inline-flex;
+  gap: 4px;
+}
+.pips span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent);
+}
+.pips span.is-on {
+  background: var(--accent);
+}
+
+.move {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: right;
+}
+.move--up {
+  color: var(--ok);
+}
+.move--down {
+  color: var(--bad);
+}
+.card .move {
+  text-align: center;
+}
+
+.study__nav--one {
+  grid-template-columns: 1fr;
+}
+
+/* Неполная подсказка под клеткой: контур первых черт или точки начала черт */
+.grid-cell {
+  position: relative;
+}
+.writer {
+  position: relative;
+}
+.guide {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.guide path {
+  fill: var(--outline);
+}
+.guide circle {
+  fill: var(--accent);
+  opacity: 0.45;
+}
+
+/* Тетрадь: три пустые клетки как напоминание */
+.paper-sheet {
+  display: flex;
+  gap: 8px;
+}
+.paper-sheet span {
+  width: 72px;
+  height: 72px;
+  border: 1.5px solid var(--grid);
+  border-radius: 4px;
+  background: var(--paper);
+}
+.self-check {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+/* Выбранная оценка остаётся яркой, остальные гаснут */
+.self-check .btn--primary:disabled {
+  opacity: 1;
+}
+
+/* Столпы */
+.pillars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  gap: 8px;
+}
+.pillar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-radius: 10px;
+  background: var(--bg);
+}
+.pillar__title {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.pillar__char {
+  font-size: 2.25rem;
+  line-height: 1.1;
+  color: var(--el);
+  border-radius: 4px;
+  padding: 0 2px;
+}
+.pillar__char.is-sealed {
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+.pillar__reading {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  line-height: 2.475rem;
+  color: var(--el);
+}
+.daily__streak {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+.panel__note.is-ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+.panel__note.warn {
+  color: var(--bad);
+}
+
+/* Цикл 60 */
+.cycle {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+.cycle__pair {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 1.25rem;
+  line-height: 1.15;
+  opacity: 0.35;
+}
+.cycle__pair span {
+  color: var(--el);
+}
+.cycle__pair.is-open {
+  opacity: 1;
+}
+.cycle__pair.is-today {
+  opacity: 1;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.cycle__mark {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Формы карты */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.field input {
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+/* Свободная практика: свёрнута, внутренние панели без рамок */
+.free summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+.free summary h2 {
+  display: inline;
+}
+.free .panel {
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+
+.app-version {
+  margin: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* Плашка «Вышла новая версия» — поверх контента внизу экрана (как в «Паре вкуса») */
+.update-bar {
+  position: fixed;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 50;
+  width: min(440px, calc(100% - 32px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 10px 10px 16px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: var(--shadow);
+  font-weight: 500;
+}
+.update-bar button {
+  min-height: 40px;
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
 /* ---------- Анимации ---------- */
 
 @keyframes card-in {

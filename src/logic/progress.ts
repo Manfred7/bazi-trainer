@@ -7,8 +7,11 @@ export const MASTERED_LEVEL = 3;
 /** Доля освоенных знаков, при которой открывается следующая колода */
 export const UNLOCK_SHARE = 0.8;
 
-/** По чему ведётся прогресс: письмо (обводка, по памяти) и каждое направление узнавания */
-export type Track = 'trace' | 'recall' | `quiz:${string}`;
+/**
+ * По чему ведётся прогресс: знакомство, письмо (обводка, полуконтур, точки, по памяти), тетрадь
+ * и каждое направление узнавания
+ */
+export type Track = 'study' | 'trace' | 'half' | 'dots' | 'recall' | 'paper' | `quiz:${string}`;
 
 export interface PairStats {
   level: number;
@@ -38,6 +41,22 @@ export function recordResult(p: Progress, charId: string, track: Track, ok: bool
     correct: prev.correct + (ok ? 1 : 0),
   };
   return { ...p, pairs: { ...p.pairs, [key]: next } };
+}
+
+/** Уровень пары не выше max: так снимается засчитанная ступень пути */
+export function capLevel(p: Progress, charId: string, track: Track, max: number): Progress {
+  const key = pairKey(charId, track);
+  const prev = p.pairs[key];
+  if (!prev || prev.level <= max) return p;
+  return { ...p, pairs: { ...p.pairs, [key]: { ...prev, level: max } } };
+}
+
+/** Уровень пары не ниже min: ступени до текущей считаются пройденными */
+export function floorLevel(p: Progress, charId: string, track: Track, min: number): Progress {
+  const key = pairKey(charId, track);
+  const prev = p.pairs[key] ?? { level: 0, seen: 0, correct: 0 };
+  if (prev.level >= min) return p;
+  return { ...p, pairs: { ...p.pairs, [key]: { ...prev, level: min } } };
 }
 
 /** Доля освоенных знаков колоды в режиме, 0…1 */

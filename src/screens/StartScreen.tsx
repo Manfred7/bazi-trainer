@@ -1,19 +1,30 @@
+import { DailyCard } from '../components/DailyCard';
+import { Seal } from '../components/Seal';
+import { CHARACTERS } from '../data/characters';
 import { DECKS, type Deck, deckById, isAvailable } from '../logic/decks';
 import { useInstall } from '../logic/install';
+import type { Journal } from '../logic/journal';
+import { STAGES, STAGE_LABEL, ladder } from '../logic/path';
 import { type Progress, UNLOCK_SHARE, mastery } from '../logic/progress';
 import { DIRECTIONS, canAsk, quizMastery } from '../logic/quiz';
 import { PASS_MISTAKES } from '../logic/session';
 import { MODES, QUIZ_LENGTHS, SESSION_LENGTHS, type Settings } from '../logic/settings';
 import { THEMES } from '../logic/theme';
+import { APP_VERSION } from '../logic/update';
 
 interface Props {
   settings: Settings;
   progress: Progress;
+  journal: Journal;
   /** Колода, которая реально будет запущена (выбранная, если она открыта) */
   deck: Deck;
   onChange: (s: Settings) => void;
   onResetProgress: () => void;
   onStart: () => void;
+  onPath: () => void;
+  onCharts: () => void;
+  onCycle: () => void;
+  onDaily: (ok: boolean | null) => void;
 }
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
@@ -33,7 +44,20 @@ const START_LABELS = {
   quiz: 'Начать',
 } as const;
 
-export function StartScreen({ settings, progress, deck, onChange, onResetProgress, onStart }: Props) {
+export function StartScreen({
+  settings,
+  progress,
+  journal,
+  deck,
+  onChange,
+  onResetProgress,
+  onStart,
+  onPath,
+  onCharts,
+  onCycle,
+  onDaily,
+}: Props) {
+  const counts = ladder(progress);
   const { canInstall, iosHint, install } = useInstall();
   const { mode } = settings;
   const track = mode === 'trace' || mode === 'recall' ? mode : null;
@@ -61,138 +85,185 @@ export function StartScreen({ settings, progress, deck, onChange, onResetProgres
       </header>
 
       <section className="panel">
-        <h2>Режим</h2>
-        <div className="segmented segmented--4" role="radiogroup" aria-label="Режим">
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              role="radio"
-              aria-checked={mode === m.id}
-              className={mode === m.id ? 'is-on' : ''}
-              onClick={() => onChange({ ...settings, mode: m.id })}
-            >
-              {m.label}
-            </button>
+        <div className="panel__head">
+          <h2>Путь знака</h2>
+          <span className="panel__note">
+            Печатей: {counts.done} из {CHARACTERS.length}
+          </span>
+        </div>
+        <ol className="ladder">
+          {STAGES.map((s) => (
+            <li key={s.id} className={counts[s.id] ? 'is-on' : ''}>
+              <span className="ladder__n">{counts[s.id]}</span>
+              <span className="ladder__label">{STAGE_LABEL[s.id]}</span>
+            </li>
+          ))}
+        </ol>
+        <div className="seals">
+          {CHARACTERS.map((c) => (
+            <Seal key={c.id} char={c} progress={progress} />
           ))}
         </div>
-        <p className="panel__note">{MODE_NOTES[mode]}</p>
+        <button className="btn btn--primary btn--wide" onClick={onPath}>
+          Продолжить путь
+        </button>
+        <p className="panel__note">
+          Приложение само ведёт каждый знак: знакомство → обводка → полуконтур → точки → по памяти → тетрадь.
+          Две чистые попытки — ступень пройдена.
+        </p>
       </section>
 
-      <section className="panel">
-        <div className="panel__head">
-          <h2>Колода</h2>
-          {mode === 'recall' && (
-            <button className="link" onClick={() => onChange({ ...settings, unlockAll: !settings.unlockAll })}>
-              {settings.unlockAll ? 'Открывать по порядку' : 'Открыть все'}
-            </button>
-          )}
-        </div>
-        <ul className="decks" role="radiogroup" aria-label="Колода">
-          {DECKS.map((d) => {
-            const open = isAvailable(d, mode, progress, settings.unlockAll);
-            const on = d.id === deck.id;
-            const m = deckMastery(d.chars);
-            return (
-              <li key={d.id}>
-                <button
-                  role="radio"
-                  aria-checked={on}
-                  disabled={!open}
-                  className={`deck ${on ? 'is-on' : ''}`}
-                  onClick={() => onChange({ ...settings, deckId: d.id })}
-                >
-                  <span className="deck__main">
-                    <span className="deck__title">{d.title}</span>
-                    <span className={`deck__sub ${open ? 'hanzi' : ''}`}>
-                      {open
-                        ? d.chars.map((c) => c.hanzi).join(' ')
-                        : `Нужно ${pct(UNLOCK_SHARE)} по памяти: ${deckById(d.requires!).title}`}
-                    </span>
-                  </span>
-                  {open && mode !== 'study' ? (
-                    <span className="deck__progress">
-                      <span className="deck__pct">{pct(m)}</span>
-                      <span className="bar bar--small">
-                        <span className="bar__fill" style={{ width: pct(m) }} />
-                      </span>
-                    </span>
-                  ) : open ? null : (
-                    <span className="deck__lock" aria-hidden>
-                      🔒
-                    </span>
-                  )}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        {mode !== 'study' && (
-          <p className="panel__note">
-            {mode === 'quiz'
-              ? 'Процент — пары «знак × направление», на которые вы верно ответили несколько раз подряд.'
-              : `Процент — знаки, которые ${mode === 'trace' ? 'обведены' : 'написаны по памяти'} верно несколько раз подряд.`}
-          </p>
-        )}
-      </section>
+      <DailyCard progress={progress} daily={journal.daily} onDone={onDaily} />
 
-      {mode === 'recall' && (
+      <div className="study__nav">
+        <button className="btn" onClick={onCharts}>
+          {journal.charts.length ? 'Мои карты' : 'Моя карта'}
+        </button>
+        <button className="btn" onClick={onCycle}>
+          Цикл 60
+        </button>
+      </div>
+
+      <details className="panel free">
+        <summary>
+          <h2>Свободная практика</h2>
+        </summary>
+        <p className="panel__note">Любой режим и колода вручную — прогресс общий с путём.</p>
+
         <section className="panel">
-          <h2>Знаков за сессию</h2>
-          <div className="segmented" role="radiogroup" aria-label="Знаков за сессию">
-            {SESSION_LENGTHS.map((n) => (
+          <h2>Режим</h2>
+          <div className="segmented segmented--4" role="radiogroup" aria-label="Режим">
+            {MODES.map((m) => (
               <button
-                key={n}
+                key={m.id}
                 role="radio"
-                aria-checked={settings.length === n}
-                className={settings.length === n ? 'is-on' : ''}
-                onClick={() => onChange({ ...settings, length: n })}
+                aria-checked={mode === m.id}
+                className={mode === m.id ? 'is-on' : ''}
+                onClick={() => onChange({ ...settings, mode: m.id })}
               >
-                {n}
+                {m.label}
               </button>
             ))}
           </div>
+          <p className="panel__note">{MODE_NOTES[mode]}</p>
         </section>
-      )}
 
-      {mode === 'quiz' && (
-        <>
-          <section className="panel">
-            <h2>Направления</h2>
-            <ul className="checks">
-              {DIRECTIONS.map((d) => (
+        <section className="panel">
+          <div className="panel__head">
+            <h2>Колода</h2>
+            {mode === 'recall' && (
+              <button className="link" onClick={() => onChange({ ...settings, unlockAll: !settings.unlockAll })}>
+                {settings.unlockAll ? 'Открывать по порядку' : 'Открыть все'}
+              </button>
+            )}
+          </div>
+          <ul className="decks" role="radiogroup" aria-label="Колода">
+            {DECKS.map((d) => {
+              const open = isAvailable(d, mode, progress, settings.unlockAll);
+              const on = d.id === deck.id;
+              const m = deckMastery(d.chars);
+              return (
                 <li key={d.id}>
-                  <label className="check">
-                    <input type="checkbox" checked={settings.directionIds.includes(d.id)} onChange={() => toggle(d.id)} />
-                    <span>{d.label}</span>
-                  </label>
+                  <button
+                    role="radio"
+                    aria-checked={on}
+                    disabled={!open}
+                    className={`deck ${on ? 'is-on' : ''}`}
+                    onClick={() => onChange({ ...settings, deckId: d.id })}
+                  >
+                    <span className="deck__main">
+                      <span className="deck__title">{d.title}</span>
+                      <span className={`deck__sub ${open ? 'hanzi' : ''}`}>
+                        {open
+                          ? d.chars.map((c) => c.hanzi).join(' ')
+                          : `Нужно ${pct(UNLOCK_SHARE)} по памяти: ${deckById(d.requires!).title}`}
+                      </span>
+                    </span>
+                    {open && mode !== 'study' ? (
+                      <span className="deck__progress">
+                        <span className="deck__pct">{pct(m)}</span>
+                        <span className="bar bar--small">
+                          <span className="bar__fill" style={{ width: pct(m) }} />
+                        </span>
+                      </span>
+                    ) : open ? null : (
+                      <span className="deck__lock" aria-hidden>
+                        🔒
+                      </span>
+                    )}
+                  </button>
                 </li>
-              ))}
-            </ul>
-            <p className="panel__note">«Животное → ветвь» спрашивается только по земным ветвям.</p>
-          </section>
+              );
+            })}
+          </ul>
+          {mode !== 'study' && (
+            <p className="panel__note">
+              {mode === 'quiz'
+                ? 'Процент — пары «знак × направление», на которые вы верно ответили несколько раз подряд.'
+                : `Процент — знаки, которые ${mode === 'trace' ? 'обведены' : 'написаны по памяти'} верно несколько раз подряд.`}
+            </p>
+          )}
+        </section>
+
+        {mode === 'recall' && (
           <section className="panel">
-            <h2>Вопросов за сессию</h2>
-            <div className="segmented" role="radiogroup" aria-label="Вопросов за сессию">
-              {QUIZ_LENGTHS.map((n) => (
+            <h2>Знаков за сессию</h2>
+            <div className="segmented" role="radiogroup" aria-label="Знаков за сессию">
+              {SESSION_LENGTHS.map((n) => (
                 <button
                   key={n}
                   role="radio"
-                  aria-checked={settings.quizLength === n}
-                  className={settings.quizLength === n ? 'is-on' : ''}
-                  onClick={() => onChange({ ...settings, quizLength: n })}
+                  aria-checked={settings.length === n}
+                  className={settings.length === n ? 'is-on' : ''}
+                  onClick={() => onChange({ ...settings, length: n })}
                 >
                   {n}
                 </button>
               ))}
             </div>
           </section>
-        </>
-      )}
+        )}
 
-      <button className="btn btn--primary btn--wide" disabled={!canStart} onClick={onStart}>
-        {START_LABELS[mode]}: {deck.title}
-      </button>
-      {!canStart && <p className="hint">Выберите направление, подходящее для этой колоды</p>}
+        {mode === 'quiz' && (
+          <>
+            <section className="panel">
+              <h2>Направления</h2>
+              <ul className="checks">
+                {DIRECTIONS.map((d) => (
+                  <li key={d.id}>
+                    <label className="check">
+                      <input type="checkbox" checked={settings.directionIds.includes(d.id)} onChange={() => toggle(d.id)} />
+                      <span>{d.label}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+              <p className="panel__note">«Животное → ветвь» спрашивается только по земным ветвям.</p>
+            </section>
+            <section className="panel">
+              <h2>Вопросов за сессию</h2>
+              <div className="segmented" role="radiogroup" aria-label="Вопросов за сессию">
+                {QUIZ_LENGTHS.map((n) => (
+                  <button
+                    key={n}
+                    role="radio"
+                    aria-checked={settings.quizLength === n}
+                    className={settings.quizLength === n ? 'is-on' : ''}
+                    onClick={() => onChange({ ...settings, quizLength: n })}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+
+        <button className="btn btn--primary btn--wide" disabled={!canStart} onClick={onStart}>
+          {START_LABELS[mode]}: {deck.title}
+        </button>
+        {!canStart && <p className="hint">Выберите направление, подходящее для этой колоды</p>}
+      </details>
 
       {canInstall && (
         <button className="btn btn--wide" onClick={install}>
@@ -224,6 +295,7 @@ export function StartScreen({ settings, progress, deck, onChange, onResetProgres
       <button className="btn btn--ghost btn--small" onClick={reset}>
         Сбросить прогресс
       </button>
+      <p className="app-version">Версия от {APP_VERSION}</p>
     </main>
   );
 }

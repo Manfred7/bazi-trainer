@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { PracticeGrid } from './PracticeGrid';
+import { type Guide, StrokeGuide } from './StrokeGuide';
 import { useHanziWriter } from './useHanziWriter';
 import { useSquareSize } from './useSquareSize';
 
@@ -22,6 +23,8 @@ interface Props extends BoardCallbacks {
   hanzi: string;
   /** Бледный контур знака под рукой (обводка) или пустая клетка (по памяти) */
   outline: boolean;
+  /** Неполная подсказка без контура: первые черты контуром или точки начала черт */
+  guide?: Guide;
   /** После скольких ошибок на одной черте показать её анимацией; false — только по кнопке */
   hintAfterMisses: number | false;
   /** Смена значения перезапускает письмо знака с нуля */
@@ -32,7 +35,7 @@ const FLASH_MS = 350;
 
 /** Клетка для письма пальцем: Hanzi Writer проверяет каждую черту по порядку и направлению */
 export const WritingBoard = forwardRef<BoardHandle, Props>(function WritingBoard(
-  { hanzi, outline, hintAfterMisses, attempt, ...callbacks },
+  { hanzi, outline, guide, hintAfterMisses, attempt, ...callbacks },
   handle,
 ) {
   const { ref, size } = useSquareSize();
@@ -85,6 +88,7 @@ export const WritingBoard = forwardRef<BoardHandle, Props>(function WritingBoard
   return (
     <div ref={ref} className="player__stage">
       <PracticeGrid size={size} miss={flash > 0}>
+        {guide && !outline && <StrokeGuide hanzi={hanzi} size={size} guide={guide} />}
         <div ref={target} className="writer" />
       </PracticeGrid>
     </div>

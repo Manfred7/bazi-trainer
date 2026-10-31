@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { CharacterAsk } from '../components/CharacterCard';
 import { SessionTop } from '../components/SessionTop';
 import { type BoardHandle, WritingBoard } from '../components/WritingBoard';
-import { type BaziChar, ELEMENTS, YIN_YANG } from '../data/characters';
+import type { BaziChar } from '../data/characters';
 import { PASS_MISTAKES, type WriteResult, isPass, pickNext } from '../logic/session';
 
 interface Props {
@@ -66,18 +67,7 @@ export function RecallScreen({ pool, length, levelOf, onResult, onFinish, onExit
       <SessionTop done={results.length + (result ? 1 : 0)} total={length} onExit={onExit} />
 
       <section key={`${results.length}-${char.id}`} className="card card--study">
-        <div className="ask">
-          <p className="ask__reading">
-            <span className="info__ru">{char.ru}</span>
-            <span className="info__pinyin">{char.pinyin}</span>
-          </p>
-          <p className="info__tags">
-            <span className={`tag el-${char.element}`}>{ELEMENTS[char.element]}</span>
-            <span className="tag">{YIN_YANG[char.yinYang]}</span>
-            {char.animal && <span className={`tag el-${char.element}`}>{char.animal}</span>}
-            <span className="tag tag--muted">{char.kind === 'stem' ? 'ствол' : 'ветвь'}</span>
-          </p>
-        </div>
+        <CharacterAsk char={char} />
 
         <WritingBoard
           ref={board}

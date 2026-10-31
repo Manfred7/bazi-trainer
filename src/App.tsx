@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { BaziChar } from './data/characters';
+import { chartChars, chartFor, parseIso, todayIso } from './logic/calendar';
 import { DECKS, type Deck, deckById, isAvailable, withUnlocks } from './logic/decks';
+import { type Journal, chartOf, loadJournal, saveJournal } from './logic/journal';
+import { type Slot, type Stage, buildPath, recordStep, stageOf } from './logic/path';
 import {
   EMPTY_PROGRESS,
   type Progress,
@@ -14,6 +17,11 @@ import { DIRECTIONS, type Direction, type QuizAnswer, isCorrect, quizMastery, qu
 import type { WriteResult } from './logic/session';
 import { type Settings, loadSettings, saveSettings } from './logic/settings';
 import { watchTheme } from './logic/theme';
+import { useAppUpdate } from './logic/update';
+import { ChartScreen } from './screens/ChartScreen';
+import { CycleScreen } from './screens/CycleScreen';
+import { PathResultScreen } from './screens/PathResultScreen';
+import { PathScreen } from './screens/PathScreen';
 import { QuizScreen } from './screens/QuizScreen';
 import { RecallScreen } from './screens/RecallScreen';
 import { ResultScreen, type SessionSummary } from './screens/ResultScreen';
@@ -36,11 +44,18 @@ interface Session {
   unlockedBefore: string[];
 }
 
+/** Ступени знаков сессии пути до её начала — для итогов */
+type Before = { char: BaziChar; stage: Stage }[];
+
 type Screen =
   | { name: 'start' }
   | { name: 'study'; deck: Deck }
   | { name: 'session'; session: Session; run: number }
-  | { name: 'result'; session: Session; results: WriteResult[]; summary: SessionSummary };
+  | { name: 'result'; session: Session; results: WriteResult[]; summary: SessionSummary }
+  | { name: 'path'; slots: Slot[]; before: Before; run: number }
+  | { name: 'pathResult'; before: Before }
+  | { name: 'charts' }
+  | { name: 'cycle' };
 
 function deckMastery(p: Progress, mode: SessionMode, deck: Deck, directions: Direction[]) {
   return mode === 'quiz' ? quizMastery(p, deck.chars, directions) : mastery(p, deck.chars, mode);
@@ -53,7 +68,9 @@ const quizResults = (answers: QuizAnswer[]): WriteResult[] =>
 export default function App() {
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [progress, setProgress] = useState<Progress>(loadProgress);
+  const [journal, setJournal] = useState<Journal>(loadJournal);
   const [screen, setScreen] = useState<Screen>({ name: 'start' });
+  const update = useAppUpdate();
 
   useEffect(() => watchTheme(settings.theme), [settings.theme]);
 
@@ -68,22 +85,55 @@ export default function App() {
     saveSettings(s);
   };
 
+  const updateJournal = (j: Journal) => {
+    setJournal(j);
+    saveJournal(j);
+  };
+
   const resetProgress = () => {
     setProgress(EMPTY_PROGRESS);
     saveProgress(EMPTY_PROGRESS);
   };
 
-  const record = useCallback(
-    (charId: string, track: Parameters<typeof recordResult>[2], ok: boolean) =>
+  const change = useCallback(
+    (f: (p: Progress) => Progress) =>
       setProgress((p) => {
-        const next = withUnlocks(recordResult(p, charId, track, ok));
+        const next = withUnlocks(f(p));
         saveProgress(next);
         return next;
       }),
     [],
   );
 
+  const record = useCallback(
+    (charId: string, track: Parameters<typeof recordResult>[2], ok: boolean) =>
+      change((p) => recordResult(p, charId, track, ok)),
+    [change],
+  );
+
   const toStart = useCallback(() => setScreen({ name: 'start' }), []);
+
+  /** Путь: знаки своей карты первыми, если так выбрано */
+  const beginPath = () => {
+    const mine = journal.charts[0];
+    const focus = journal.focusChart && mine ? chartChars(chartOf(mine)) : [];
+    const slots = buildPath(progress, focus);
+    const seen = new Set<string>();
+    const before = slots
+      .filter((s) => !seen.has(s.char.id) && seen.add(s.char.id))
+      .map((s) => ({ char: s.char, stage: stageOf(progress, s.char.id) }));
+    setScreen({ name: 'path', slots, before, run: Date.now() });
+  };
+
+  /** Столп дня записан; ok — по памяти верно или нет (в прогресс тетради), null — переписан с образца */
+  const daily = (ok: boolean | null) => {
+    const today = todayIso();
+    if (ok !== null) {
+      const { day } = chartFor(...parseIso(today));
+      change((p) => [day.stem, day.branch].reduce((q, c) => recordStep(q, c.id, 'paper', ok), p));
+    }
+    if (!journal.daily.includes(today)) updateJournal({ ...journal, daily: [...journal.daily, today] });
+  };
 
   const begin = (mode: SessionMode, d: Deck, chars: BaziChar[], length: number, dirs = directions) =>
     setScreen({
@@ -136,71 +186,123 @@ export default function App() {
     else begin('quiz', s.deck, chars, Math.min(settings.quizLength, Math.max(5, chars.length * 3)), s.directions);
   };
 
-  switch (screen.name) {
-    case 'start':
-      return (
-        <StartScreen
-          settings={settings}
-          progress={progress}
-          deck={deck}
-          onChange={updateSettings}
-          onResetProgress={resetProgress}
-          onStart={start}
-        />
-      );
-    case 'study':
-      return (
-        <StudyScreen
-          deck={screen.deck}
-          speed={settings.speed}
-          onSpeed={(speed) => updateSettings({ ...settings, speed })}
-          onExit={toStart}
-        />
-      );
-    case 'session': {
-      const { session, run } = screen;
-      if (session.mode === 'quiz') {
+  const content = () => {
+    switch (screen.name) {
+      case 'start':
         return (
-          <QuizScreen
-            key={run}
-            config={{ pool: session.chars, deck: session.deck.chars, directions: session.directions, length: session.length }}
+          <StartScreen
+            settings={settings}
             progress={progress}
-            onAnswer={(a) => record(a.question.char.id, quizTrack(a.question.direction.id), isCorrect(a))}
-            onFinish={(answers) => finish(session, quizResults(answers))}
+            journal={journal}
+            deck={deck}
+            onChange={updateSettings}
+            onResetProgress={resetProgress}
+            onStart={start}
+            onPath={beginPath}
+            onCharts={() => setScreen({ name: 'charts' })}
+            onCycle={() => setScreen({ name: 'cycle' })}
+            onDaily={daily}
+          />
+        );
+      case 'path':
+        return (
+          <PathScreen
+            key={screen.run}
+            slots={screen.slots}
+            progress={progress}
+            speed={settings.speed}
+            onStep={(id, stage, ok, demote) => change((p) => recordStep(p, id, stage, ok, demote))}
+            onFinish={() => setScreen({ name: 'pathResult', before: screen.before })}
             onExit={toStart}
           />
         );
+      case 'pathResult':
+        return <PathResultScreen before={screen.before} progress={progress} onAgain={beginPath} onMenu={toStart} />;
+      case 'charts':
+        return (
+          <ChartScreen journal={journal} progress={progress} onChange={updateJournal} onLearn={beginPath} onExit={toStart} />
+        );
+      case 'cycle':
+        return (
+          <CycleScreen
+            progress={progress}
+            chartPairs={
+              new Set(
+                journal.charts.flatMap((c) => {
+                  const ch = chartOf(c);
+                  return [ch.hour, ch.day, ch.month, ch.year].filter((p) => !!p).map((p) => p!.index);
+                }),
+              )
+            }
+            onExit={toStart}
+          />
+        );
+      case 'study':
+        return (
+          <StudyScreen
+            deck={screen.deck}
+            speed={settings.speed}
+            onSpeed={(speed) => updateSettings({ ...settings, speed })}
+            onExit={toStart}
+          />
+        );
+      case 'session': {
+        const { session, run } = screen;
+        if (session.mode === 'quiz') {
+          return (
+            <QuizScreen
+              key={run}
+              config={{ pool: session.chars, deck: session.deck.chars, directions: session.directions, length: session.length }}
+              progress={progress}
+              onAnswer={(a) => record(a.question.char.id, quizTrack(a.question.direction.id), isCorrect(a))}
+              onFinish={(answers) => finish(session, quizResults(answers))}
+              onExit={toStart}
+            />
+          );
+        }
+        const track = session.mode;
+        const props = {
+          onResult: (r: WriteResult) => record(r.char.id, track, r.ok),
+          onFinish: (results: WriteResult[]) => finish(session, results),
+          onExit: toStart,
+        };
+        return track === 'trace' ? (
+          <TraceScreen key={run} chars={session.chars} {...props} />
+        ) : (
+          <RecallScreen
+            key={run}
+            pool={session.chars}
+            length={session.length}
+            levelOf={(id) => levelOf(progress, id, 'recall')}
+            {...props}
+          />
+        );
       }
-      const track = session.mode;
-      const props = {
-        onResult: (r: WriteResult) => record(r.char.id, track, r.ok),
-        onFinish: (results: WriteResult[]) => finish(session, results),
-        onExit: toStart,
-      };
-      return track === 'trace' ? (
-        <TraceScreen key={run} chars={session.chars} {...props} />
-      ) : (
-        <RecallScreen
-          key={run}
-          pool={session.chars}
-          length={session.length}
-          levelOf={(id) => levelOf(progress, id, 'recall')}
-          {...props}
-        />
-      );
+      case 'result': {
+        const { session } = screen;
+        return (
+          <ResultScreen
+            kind={session.mode === 'quiz' ? 'quiz' : 'write'}
+            results={screen.results}
+            summary={screen.summary}
+            onRetryMistakes={(chars) => retry(session, chars)}
+            onRestart={() => beginDeck(session.mode, session.deck, session.directions)}
+            onMenu={toStart}
+          />
+        );
+      }
     }
-    case 'result': {
-      const { session } = screen;
-      return (
-        <ResultScreen
-          kind={session.mode === 'quiz' ? 'quiz' : 'write'}
-          results={screen.results}
-          summary={screen.summary}
-          onRetryMistakes={(chars) => retry(session, chars)}
-          onRestart={() => beginDeck(session.mode, session.deck, session.directions)}
-          onMenu={toStart}
-        />
-      );
-    }
-  }
+  };
+
+  return (
+    <>
+      {content()}
+      {update.ready && (
+        <div className="update-bar" role="status">
+          <span>Вышла новая версия</span>
+          <button onClick={update.reload}>Обновить</button>
+        </div>
+      )}
+    </>
+  );
 }

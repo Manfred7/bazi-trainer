@@ -2,6 +2,24 @@ import { type BaziChar, ELEMENTS, YIN_YANG } from '../data/characters';
 
 const KIND = { stem: { title: 'Ствол', of: 10 }, branch: { title: 'Ветвь', of: 12 } } as const;
 
+/** Задание «напишите знак»: чтение и значение без самого знака */
+export function CharacterAsk({ char }: { char: BaziChar }) {
+  return (
+    <div className="ask">
+      <p className="ask__reading">
+        <span className="info__ru">{char.ru}</span>
+        <span className="info__pinyin">{char.pinyin}</span>
+      </p>
+      <p className="info__tags">
+        <span className={`tag el-${char.element}`}>{ELEMENTS[char.element]}</span>
+        <span className="tag">{YIN_YANG[char.yinYang]}</span>
+        {char.animal && <span className={`tag el-${char.element}`}>{char.animal}</span>}
+        <span className="tag tag--muted">{char.kind === 'stem' ? 'ствол' : 'ветвь'}</span>
+      </p>
+    </div>
+  );
+}
+
 /** Подписи знака: чтения, стихия, инь/ян и (у ветвей) животное */
 export function CharacterInfo({ char }: { char: BaziChar }) {
   const kind = KIND[char.kind];
