@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 const MAX = 360;
 /** Меньше клетки уже неудобно писать пальцем */
 const MIN = 200;
+/** Последний подогнанный размер: следующий шаг пути начинает с него, без прыжков клетки */
+let lastFit = MAX;
 
 /**
  * Квадрат по ширине контейнера, не больше MAX: размер холста письма.
@@ -11,7 +13,7 @@ const MIN = 200;
  */
 export function useSquareSize(fit = false) {
   const ref = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState(MAX);
+  const [size, setSize] = useState(fit ? lastFit : MAX);
 
   useEffect(() => {
     const el = ref.current;
@@ -21,7 +23,7 @@ export function useSquareSize(fit = false) {
       const width = Math.min(MAX, Math.floor(el.clientWidth));
       if (!fit || !main) return setSize(width);
       // Высота экрана линейна по размеру клетки: остальное + size. Подгоняем за один шаг
-      setSize((s) => Math.max(MIN, Math.min(width, Math.floor(s - (main.offsetHeight - window.innerHeight)))));
+      setSize((s) => (lastFit = Math.max(MIN, Math.min(width, Math.floor(s - (main.offsetHeight - window.innerHeight))))));
     };
     update();
     const ro = new ResizeObserver(update);

@@ -4,6 +4,7 @@ import { SessionTop } from '../components/SessionTop';
 import { StrokePlayer } from '../components/StrokePlayer';
 import { type BoardHandle, WritingBoard } from '../components/WritingBoard';
 import type { BaziChar } from '../data/characters';
+import { strokeCount } from '../data/strokes';
 import {
   DEMOTE_MISTAKES,
   STAGE_LABEL,
@@ -164,6 +165,9 @@ function WriteStep({
   const [hints, setHints] = useState(0);
   const [result, setResult] = useState<{ ok: boolean; mistakes: number } | null>(null);
   const score = mistakes + hints;
+  const total = strokeCount(char.hanzi);
+  // С подсказкой на клетке число черт не секрет; по памяти — секрет
+  const showTotal = stage !== 'recall';
 
   const complete = (m: number) => {
     const total = m + hints;
@@ -172,9 +176,10 @@ function WriteStep({
     onResult(isPass(total), total >= DEMOTE_MISTAKES);
   };
 
+  // На обводке контур и так виден — показать, какую черту ждут, можно бесплатно
   const hint = () => {
     board.current?.hint();
-    setHints((h) => h + 1);
+    if (stage !== 'trace') setHints((h) => h + 1);
   };
 
   return (
@@ -197,18 +202,20 @@ function WriteStep({
         <p className={`player__status ${result ? (result.ok ? 'is-ok' : 'is-bad') : ''}`}>
           {result
             ? `${result.ok ? 'Засчитано' : 'Не засчитано'} · ошибок: ${result.mistakes}`
-            : `Черт: ${written}${score ? ` · ошибок: ${score}` : ''}`}
+            : `${showTotal ? `Черта ${Math.min(written + 1, total)} из ${total}` : `Черт: ${written}`}${score ? ` · ошибок: ${score}` : ''}`}
         </p>
         {result ? (
           <button className="btn btn--small" onClick={() => board.current?.animate()}>
             ▶ Порядок черт
           </button>
+        ) : stage === 'trace' ? (
+          <button className="btn btn--small" onClick={hint} title="Подсветить черту, которую ждёт проверка">
+            Какая черта?
+          </button>
         ) : (
-          stage !== 'trace' && (
-            <button className="btn btn--small" onClick={hint} title="Подсказка считается ошибкой">
-              Подсказка
-            </button>
-          )
+          <button className="btn btn--small" onClick={hint} title="Подсказка считается ошибкой">
+            Подсказка
+          </button>
         )}
       </div>
       {stage === 'trace' && <CharacterInfo char={char} />}
