@@ -160,27 +160,54 @@ function WriteStep({
   onResult: (ok: boolean, demote: boolean) => void;
 }) {
   const board = useRef<BoardHandle>(null);
+  const [attempt, setAttempt] = useState(0);
   const [written, setWritten] = useState(0);
+  /** Ошибки текущей попытки на клетке */
   const [mistakes, setMistakes] = useState(0);
+  /** Ошибки брошенных попыток: «Заново» до конца знака их не стирает */
+  const [carry, setCarry] = useState(0);
   const [hints, setHints] = useState(0);
+  /** Засчитанная (первая) попытка — она идёт в прогресс */
   const [result, setResult] = useState<{ ok: boolean; mistakes: number } | null>(null);
-  const score = mistakes + hints;
+  /** Тренировочный круг после засчитанной попытки: null — не начат, иначе — закончен ли */
+  const [practice, setPractice] = useState<{ done: boolean } | null>(null);
+  const score = carry + mistakes + hints;
   const total = strokeCount(char.hanzi);
   // С подсказкой на клетке число черт не секрет; по памяти — секрет
   const showTotal = stage !== 'recall';
+  const writing = !result || (practice && !practice.done);
 
   const complete = (m: number) => {
-    const total = m + hints;
     setMistakes(m);
-    setResult({ ok: isPass(total), mistakes: total });
-    onResult(isPass(total), total >= DEMOTE_MISTAKES);
+    if (result) return setPractice({ done: true });
+    const sum = carry + m + hints;
+    setResult({ ok: isPass(sum), mistakes: sum });
+    onResult(isPass(sum), sum >= DEMOTE_MISTAKES);
   };
 
-  // На обводке контур и так виден — показать, какую черту ждут, можно бесплатно
+  /** Переписать знак: до конца — ошибки остаются в счёте, после — тренировка без влияния на прогресс */
+  const restart = () => {
+    if (!result) setCarry((c) => c + mistakes);
+    else setPractice({ done: false });
+    setMistakes(0);
+    setWritten(0);
+    setAttempt((a) => a + 1);
+  };
+
+  // На обводке и в тренировке подсказка бесплатна: контур и так виден / в счёт не идёт
   const hint = () => {
     board.current?.hint();
-    if (stage !== 'trace') setHints((h) => h + 1);
+    if (stage !== 'trace' && !result) setHints((h) => h + 1);
   };
+
+  const progressText = `${showTotal ? `Черта ${Math.min(written + 1, total)} из ${total}` : `Черт: ${written}`}`;
+  const status = !result
+    ? `${progressText}${score ? ` · ошибок: ${score}` : ''}`
+    : !practice
+      ? `${result.ok ? 'Засчитано' : 'Не засчитано'} · ошибок: ${result.mistakes}`
+      : practice.done
+        ? `Ещё раз · ошибок: ${mistakes}. В счёт — первая попытка`
+        : `Ещё раз: ${progressText}${mistakes ? ` · ошибок: ${mistakes}` : ''}`;
 
   return (
     <>
@@ -191,32 +218,47 @@ function WriteStep({
         outline={stage === 'trace'}
         guide={stage === 'half' || stage === 'dots' ? stage : undefined}
         hintAfterMisses={HINT_AFTER[stage] ?? false}
-        attempt={0}
+        attempt={attempt}
         fit
         onStroke={setWritten}
         onMistake={setMistakes}
         onComplete={complete}
       />
-      {/* Статус и кнопка — в одну строку, чтобы клетке осталось больше места */}
+      {/* Статус и кнопки — в одну строку, чтобы клетке осталось больше места */}
       <div className="step-row">
-        <p className={`player__status ${result ? (result.ok ? 'is-ok' : 'is-bad') : ''}`}>
-          {result
-            ? `${result.ok ? 'Засчитано' : 'Не засчитано'} · ошибок: ${result.mistakes}`
-            : `${showTotal ? `Черта ${Math.min(written + 1, total)} из ${total}` : `Черт: ${written}`}${score ? ` · ошибок: ${score}` : ''}`}
-        </p>
-        {result ? (
-          <button className="btn btn--small" onClick={() => board.current?.animate()}>
-            ▶ Порядок черт
-          </button>
-        ) : stage === 'trace' ? (
-          <button className="btn btn--small" onClick={hint} title="Подсветить черту, которую ждёт проверка">
-            Какая черта?
-          </button>
-        ) : (
-          <button className="btn btn--small" onClick={hint} title="Подсказка считается ошибкой">
-            Подсказка
-          </button>
-        )}
+        <p className={`player__status ${result && !practice ? (result.ok ? 'is-ok' : 'is-bad') : ''}`}>{status}</p>
+        <div className="step-row__actions">
+          {writing ? (
+            <>
+              {(written > 0 || mistakes > 0) && (
+                <button
+                  className="btn btn--small btn--icon"
+                  onClick={restart}
+                  aria-label="Заново"
+                  title={result ? 'Заново' : 'Заново — ошибки останутся в счёте'}
+                >
+                  ↺
+                </button>
+              )}
+              <button
+                className="btn btn--small"
+                onClick={hint}
+                title={stage === 'trace' || result ? 'Подсветить черту, которую ждёт проверка' : 'Подсказка считается ошибкой'}
+              >
+                {stage === 'trace' ? 'Какая черта?' : 'Подсказка'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="btn btn--small" onClick={restart}>
+                ↺ Ещё раз
+              </button>
+              <button className="btn btn--small btn--icon" onClick={() => board.current?.animate()} aria-label="Порядок черт" title="Порядок черт">
+                ▶
+              </button>
+            </>
+          )}
+        </div>
       </div>
       {stage === 'trace' && <CharacterInfo char={char} />}
     </>
