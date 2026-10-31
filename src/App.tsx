@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { BaziChar } from './data/characters';
 import { chartChars, chartFor, parseIso, todayIso } from './logic/calendar';
 import { DECKS, type Deck, deckById, isAvailable, withUnlocks } from './logic/decks';
-import { type Journal, chartOf, loadJournal, saveJournal, withAwards } from './logic/journal';
+import { EMPTY_JOURNAL, type Journal, chartOf, loadJournal, saveJournal, withAwards } from './logic/journal';
 import { type Slot, type Stage, buildPath, recordStep, stageOf } from './logic/path';
 import {
   EMPTY_PROGRESS,
@@ -106,9 +106,12 @@ export default function App() {
     saveJournal(j);
   };
 
+  /** Полный сброс: знаки, звания с историей, дни столпа и карты; «Новичок» запишется заново. Настройки вида остаются */
   const resetProgress = () => {
     setProgress(EMPTY_PROGRESS);
     saveProgress(EMPTY_PROGRESS);
+    updateJournal(EMPTY_JOURNAL);
+    setRankUp(null);
   };
 
   const change = useCallback(

@@ -41,7 +41,11 @@ const PROMPTS: Record<Stage, string> = {
 /** После скольких ошибок на одной черте она показывается сама */
 const HINT_AFTER: Partial<Record<Stage, number>> = { trace: 2, half: 3, dots: 3 };
 
-/** «Продолжить путь»: каждый слот — шаг на текущей ступени знака */
+/**
+ * «Продолжить путь»: каждый слот — шаг на текущей ступени знака.
+ * Экран помещается в окно без прокрутки: клетки ужимаются по высоте (fit), сообщение о переходе
+ * встаёт на место подсказки к заданию, а не добавляет строку.
+ */
 export function PathScreen({ slots, progress, speed, onStep, onFinish, onExit }: Props) {
   const [index, setIndex] = useState(0);
   const [recorded, setRecorded] = useState(false);
@@ -72,10 +76,10 @@ export function PathScreen({ slots, progress, speed, onStep, onFinish, onExit }:
   }, [onExit]);
 
   const steps = stageSteps(progress, slot.char.id, stage);
-  const after = recorded ? stageOf(progress, slot.char.id) : null;
+  const move = recorded ? moveOf(stage, stageOf(progress, slot.char.id), !!slot.review) : null;
 
   return (
-    <main className="screen study">
+    <main className="screen study path">
       <SessionTop done={index + (recorded ? 1 : 0)} total={slots.length} onExit={onExit} />
 
       <section key={index} className="card card--study">
@@ -89,7 +93,11 @@ export function PathScreen({ slots, progress, speed, onStep, onFinish, onExit }:
             </span>
           )}
         </div>
-        <p className="card__prompt">{slot.review ? 'Повторение: напишите знак по памяти' : PROMPTS[stage]}</p>
+        {move ? (
+          <p className={`move move--${move.dir}`}>{move.text}</p>
+        ) : (
+          <p className="card__prompt">{slot.review ? 'Повторение: напишите знак по памяти' : PROMPTS[stage]}</p>
+        )}
 
         {stage === 'intro' ? (
           <IntroStep char={slot.char} speed={speed} />
@@ -98,8 +106,6 @@ export function PathScreen({ slots, progress, speed, onStep, onFinish, onExit }:
         ) : (
           <WriteStep char={slot.char} stage={stage} onResult={record} />
         )}
-
-        {after && <Move from={stage} to={after} review={!!slot.review} />}
       </section>
 
       <div className="study__nav study__nav--one">
@@ -123,21 +129,21 @@ export function PathScreen({ slots, progress, speed, onStep, onFinish, onExit }:
   );
 }
 
-/** Что стало со знаком после шага: перешёл, спустился или ещё раз на той же ступени */
-function Move({ from, to, review }: { from: Stage; to: Stage; review: boolean }) {
+/** Что стало со знаком после шага: перешёл, спустился; null — остался на той же ступени */
+function moveOf(from: Stage, to: Stage, review: boolean): { dir: 'up' | 'down'; text: string } | null {
   if (from === 'intro') return null;
   const d = stageIndex(to) - stageIndex(from);
-  if (review) return d < 0 ? <p className="move move--down">Знак вернулся на «По памяти»</p> : null;
-  if (to === 'done') return <p className="move move--up">Знак освоен — печать поставлена</p>;
-  if (d > 0) return <p className="move move--up">Ступень пройдена → {STAGE_LABEL[to]}</p>;
-  if (d < 0) return <p className="move move--down">Шаг назад → {STAGE_LABEL[to]}. Один чистый проход — и вернётесь</p>;
+  if (review) return d < 0 ? { dir: 'down', text: 'Знак вернулся на «По памяти»' } : null;
+  if (to === 'done') return { dir: 'up', text: 'Знак освоен — печать поставлена' };
+  if (d > 0) return { dir: 'up', text: `Ступень пройдена → ${STAGE_LABEL[to]}` };
+  if (d < 0) return { dir: 'down', text: `Шаг назад → ${STAGE_LABEL[to]}. Один чистый проход — и вернётесь` };
   return null;
 }
 
 function IntroStep({ char, speed }: { char: BaziChar; speed: Speed }) {
   return (
     <>
-      <StrokePlayer hanzi={char.hanzi} speed={speed} />
+      <StrokePlayer hanzi={char.hanzi} speed={speed} fit />
       <CharacterInfo char={char} />
     </>
   );
@@ -181,27 +187,31 @@ function WriteStep({
         guide={stage === 'half' || stage === 'dots' ? stage : undefined}
         hintAfterMisses={HINT_AFTER[stage] ?? false}
         attempt={0}
+        fit
         onStroke={setWritten}
         onMistake={setMistakes}
         onComplete={complete}
       />
-      <p className={`player__status ${result ? (result.ok ? 'is-ok' : 'is-bad') : ''}`}>
-        {result
-          ? `${result.ok ? 'Засчитано' : 'Не засчитано'} · ошибок: ${result.mistakes}`
-          : `Написано черт: ${written}${score ? ` · ошибок: ${score}` : ''}`}
-      </p>
-      {stage === 'trace' && <CharacterInfo char={char} />}
-      {result ? (
-        <button className="btn btn--small" onClick={() => board.current?.animate()}>
-          ▶ Порядок черт
-        </button>
-      ) : (
-        stage !== 'trace' && (
-          <button className="btn btn--small" onClick={hint}>
-            Подсказка (считается ошибкой)
+      {/* Статус и кнопка — в одну строку, чтобы клетке осталось больше места */}
+      <div className="step-row">
+        <p className={`player__status ${result ? (result.ok ? 'is-ok' : 'is-bad') : ''}`}>
+          {result
+            ? `${result.ok ? 'Засчитано' : 'Не засчитано'} · ошибок: ${result.mistakes}`
+            : `Черт: ${written}${score ? ` · ошибок: ${score}` : ''}`}
+        </p>
+        {result ? (
+          <button className="btn btn--small" onClick={() => board.current?.animate()}>
+            ▶ Порядок черт
           </button>
-        )
-      )}
+        ) : (
+          stage !== 'trace' && (
+            <button className="btn btn--small" onClick={hint} title="Подсказка считается ошибкой">
+              Подсказка
+            </button>
+          )
+        )}
+      </div>
+      {stage === 'trace' && <CharacterInfo char={char} />}
     </>
   );
 }
@@ -244,12 +254,12 @@ function PaperStep({
 
   return (
     <>
-      <StrokePlayer hanzi={char.hanzi} speed={speed} />
+      <StrokePlayer hanzi={char.hanzi} speed={speed} fit />
       <p className="muted">Как получилось в тетради?</p>
       <div className="self-check">
         {[
           { id: 'ok', label: 'Верно', ok: true, demote: false },
-          { id: 'order', label: 'Ошибся в порядке черт', ok: false, demote: false },
+          { id: 'order', label: 'Ошибся в порядке', ok: false, demote: false },
           { id: 'forgot', label: 'Не вспомнил', ok: false, demote: true },
         ].map((o) => (
           <button

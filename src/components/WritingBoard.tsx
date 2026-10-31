@@ -29,16 +29,18 @@ interface Props extends BoardCallbacks {
   hintAfterMisses: number | false;
   /** Смена значения перезапускает письмо знака с нуля */
   attempt: number;
+  /** Клетка ужимается по высоте экрана, чтобы кнопки под ней были видны */
+  fit?: boolean;
 }
 
 const FLASH_MS = 350;
 
 /** Клетка для письма пальцем: Hanzi Writer проверяет каждую черту по порядку и направлению */
 export const WritingBoard = forwardRef<BoardHandle, Props>(function WritingBoard(
-  { hanzi, outline, guide, hintAfterMisses, attempt, ...callbacks },
+  { hanzi, outline, guide, hintAfterMisses, attempt, fit = false, ...callbacks },
   handle,
 ) {
-  const { ref, size } = useSquareSize();
+  const { ref, size } = useSquareSize(fit);
   const { target, writer } = useHanziWriter(hanzi, size, {
     showOutline: outline,
     showCharacter: false,

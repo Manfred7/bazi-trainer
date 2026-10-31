@@ -77,7 +77,12 @@ export function StartScreen({
   };
 
   const reset = () => {
-    if (window.confirm('Сбросить весь прогресс? Открытые колоды снова закроются.')) onResetProgress();
+    if (
+      window.confirm(
+        'Сбросить всё? Знаки вернутся к знакомству, звание — к «Новичку»; сотрутся история званий, дни столпа и сохранённые карты, открытые колоды закроются. Останутся только тема и скорость анимации.',
+      )
+    )
+      onResetProgress();
   };
 
   return (
@@ -301,7 +306,7 @@ export function StartScreen({
       </section>
 
       <button className="btn btn--ghost btn--small" onClick={reset}>
-        Сбросить прогресс
+        Сбросить всё
       </button>
       <p className="app-version">Версия от {APP_VERSION}</p>
     </main>

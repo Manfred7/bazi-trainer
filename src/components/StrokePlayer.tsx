@@ -15,11 +15,13 @@ interface Props {
   speed: Speed;
   /** Проиграть порядок черт сразу при показе знака */
   autoplay?: boolean;
+  /** Клетка ужимается по высоте экрана, чтобы кнопки под ней были видны */
+  fit?: boolean;
 }
 
 /** Знак на клетке с анимацией порядка черт: целиком, с паузой или по одной черте */
-export function StrokePlayer({ hanzi, speed, autoplay = true }: Props) {
-  const { ref, size } = useSquareSize();
+export function StrokePlayer({ hanzi, speed, autoplay = true, fit = false }: Props) {
+  const { ref, size } = useSquareSize(fit);
   const { target, writer } = useHanziWriter(hanzi, size, { showOutline: true });
   const [play, setPlay] = useState<Play>({ kind: 'idle' });
   const total = strokeCount(hanzi);

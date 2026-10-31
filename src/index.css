@@ -897,11 +897,45 @@ input:focus-visible {
   border-radius: 4px;
   background: var(--paper);
 }
+/* Самооценка тетради — три кнопки в ряд, чтобы «Дальше» оставалась на экране */
 .self-check {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+.self-check .btn {
+  padding: 10px 4px;
+  font-size: 0.875rem;
+  line-height: 1.2;
+}
+
+/* Статус письма и кнопка подсказки в одну строку */
+.step-row {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
   width: 100%;
+  min-height: 36px;
+}
+.step-row .player__status {
+  text-align: left;
+}
+.step-row .btn--small {
+  flex: none;
+  align-self: auto;
+}
+
+/* Шаг пути: плотнее, чтобы клетке досталось больше высоты */
+.path.screen {
+  gap: 14px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+.path .card--study {
+  gap: 10px;
+  padding-top: 12px;
 }
 /* Выбранная оценка остаётся яркой, остальные гаснут */
 .self-check .btn--primary:disabled {
