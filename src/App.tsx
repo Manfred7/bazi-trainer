@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { BaziChar } from './data/characters';
 import { chartChars, chartFor, parseIso, todayIso } from './logic/calendar';
 import { DECKS, type Deck, deckById, isAvailable, withUnlocks } from './logic/decks';
-import { type Journal, chartOf, loadJournal, saveJournal } from './logic/journal';
+import { type Journal, chartOf, loadJournal, saveJournal, withAwards } from './logic/journal';
 import { type Slot, type Stage, buildPath, recordStep, stageOf } from './logic/path';
 import {
   EMPTY_PROGRESS,
@@ -16,10 +16,13 @@ import {
 import { DIRECTIONS, type Direction, type QuizAnswer, isCorrect, quizMastery, quizTrack } from './logic/quiz';
 import type { WriteResult } from './logic/session';
 import { type Settings, loadSettings, saveSettings } from './logic/settings';
+import { rankProgress } from './logic/ranks';
 import { watchTheme } from './logic/theme';
+import { RankUp } from './components/RankBadge';
 import { useAppUpdate } from './logic/update';
 import { ChartScreen } from './screens/ChartScreen';
 import { CycleScreen } from './screens/CycleScreen';
+import { HistoryScreen } from './screens/HistoryScreen';
 import { PathResultScreen } from './screens/PathResultScreen';
 import { PathScreen } from './screens/PathScreen';
 import { QuizScreen } from './screens/QuizScreen';
@@ -55,7 +58,8 @@ type Screen =
   | { name: 'path'; slots: Slot[]; before: Before; run: number }
   | { name: 'pathResult'; before: Before }
   | { name: 'charts' }
-  | { name: 'cycle' };
+  | { name: 'cycle' }
+  | { name: 'history' };
 
 function deckMastery(p: Progress, mode: SessionMode, deck: Deck, directions: Direction[]) {
   return mode === 'quiz' ? quizMastery(p, deck.chars, directions) : mastery(p, deck.chars, mode);
@@ -71,8 +75,20 @@ export default function App() {
   const [journal, setJournal] = useState<Journal>(loadJournal);
   const [screen, setScreen] = useState<Screen>({ name: 'start' });
   const update = useAppUpdate();
+  /** Только что полученное звание: поздравление ждёт старта или итогов, чтобы не мешать письму */
+  const [rankUp, setRankUp] = useState<number | null>(null);
+  const rank = rankProgress(progress, journal.daily.length, journal.bestRank);
 
   useEffect(() => watchTheme(settings.theme), [settings.theme]);
+
+  // Новое звание записываем с моментом присвоения; «Новичок» — при первом запуске, без поздравления
+  useEffect(() => {
+    const next = withAwards(journal, rank.index);
+    if (next === journal) return;
+    setJournal(next);
+    saveJournal(next);
+    if (rank.index > journal.bestRank) setRankUp(rank.index);
+  }, [rank.index, journal]);
 
   const directions = DIRECTIONS.filter((d) => settings.directionIds.includes(d.id));
   const available = (d: Deck) => isAvailable(d, settings.mode, progress, settings.unlockAll);
@@ -194,6 +210,7 @@ export default function App() {
             settings={settings}
             progress={progress}
             journal={journal}
+            rank={rank}
             deck={deck}
             onChange={updateSettings}
             onResetProgress={resetProgress}
@@ -201,6 +218,7 @@ export default function App() {
             onPath={beginPath}
             onCharts={() => setScreen({ name: 'charts' })}
             onCycle={() => setScreen({ name: 'cycle' })}
+            onHistory={() => setScreen({ name: 'history' })}
             onDaily={daily}
           />
         );
@@ -222,6 +240,8 @@ export default function App() {
         return (
           <ChartScreen journal={journal} progress={progress} onChange={updateJournal} onLearn={beginPath} onExit={toStart} />
         );
+      case 'history':
+        return <HistoryScreen awards={journal.awards} rank={rank} progress={progress} onExit={toStart} />;
       case 'cycle':
         return (
           <CycleScreen
@@ -297,6 +317,18 @@ export default function App() {
   return (
     <>
       {content()}
+      {rankUp !== null && (screen.name === 'start' || screen.name === 'pathResult') && (
+        <RankUp
+          index={rankUp}
+          award={journal.awards.find((a) => a.rank === rankUp)}
+          progress={progress}
+          onClose={() => setRankUp(null)}
+          onHistory={() => {
+            setRankUp(null);
+            setScreen({ name: 'history' });
+          }}
+        />
+      )}
       {update.ready && (
         <div className="update-bar" role="status">
           <span>Вышла новая версия</span>

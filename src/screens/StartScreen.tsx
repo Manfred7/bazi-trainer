@@ -1,4 +1,5 @@
 import { DailyCard } from '../components/DailyCard';
+import { RankCard } from '../components/RankBadge';
 import { Seal } from '../components/Seal';
 import { CHARACTERS } from '../data/characters';
 import { DECKS, type Deck, deckById, isAvailable } from '../logic/decks';
@@ -7,6 +8,7 @@ import type { Journal } from '../logic/journal';
 import { STAGES, STAGE_LABEL, ladder } from '../logic/path';
 import { type Progress, UNLOCK_SHARE, mastery } from '../logic/progress';
 import { DIRECTIONS, canAsk, quizMastery } from '../logic/quiz';
+import type { RankProgress } from '../logic/ranks';
 import { PASS_MISTAKES } from '../logic/session';
 import { MODES, QUIZ_LENGTHS, SESSION_LENGTHS, type Settings } from '../logic/settings';
 import { THEMES } from '../logic/theme';
@@ -16,6 +18,7 @@ interface Props {
   settings: Settings;
   progress: Progress;
   journal: Journal;
+  rank: RankProgress;
   /** Колода, которая реально будет запущена (выбранная, если она открыта) */
   deck: Deck;
   onChange: (s: Settings) => void;
@@ -24,6 +27,7 @@ interface Props {
   onPath: () => void;
   onCharts: () => void;
   onCycle: () => void;
+  onHistory: () => void;
   onDaily: (ok: boolean | null) => void;
 }
 
@@ -48,6 +52,7 @@ export function StartScreen({
   settings,
   progress,
   journal,
+  rank,
   deck,
   onChange,
   onResetProgress,
@@ -55,6 +60,7 @@ export function StartScreen({
   onPath,
   onCharts,
   onCycle,
+  onHistory,
   onDaily,
 }: Props) {
   const counts = ladder(progress);
@@ -83,6 +89,8 @@ export function StartScreen({
         <h1>Прописи БаЦзы</h1>
         <p className="muted">Как пишется, читается и что значит каждый знак</p>
       </header>
+
+      <RankCard progress={rank} onHistory={onHistory} />
 
       <section className="panel">
         <div className="panel__head">

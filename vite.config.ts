@@ -45,7 +45,7 @@ export default defineConfig(({ command, isPreview, mode }) => ({
       },
       workbox: {
         // Всё приложение кладётся в кэш при установке — дальше работает без сети
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,json}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,json,webp}'],
         runtimeCaching: [
           {
             // Шрифты Google: стили и файлы кэшируются при первом показе
