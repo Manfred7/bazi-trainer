@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { PracticeGrid } from './PracticeGrid';
-import { type Guide, GuideOver, GuideUnder } from './StrokeGuide';
+import { type Guide, GuideOver, GuidePeek, GuideUnder } from './StrokeGuide';
 import { useHanziWriter } from './useHanziWriter';
 import { useSquareSize } from './useSquareSize';
 
@@ -38,13 +38,15 @@ interface Props extends BoardCallbacks {
   attempt: number;
   /** Клетка ужимается по высоте экрана, чтобы кнопки под ней были видны */
   fit?: boolean;
+  /** «Взгляни и напиши»: показать знак целиком на ms; key — чтобы показ перезапускался */
+  peek?: { ms: number; key: number } | null;
 }
 
 const FLASH_MS = 350;
 
 /** Клетка для письма пальцем: Hanzi Writer проверяет каждую черту по порядку и направлению */
 export const WritingBoard = forwardRef<BoardHandle, Props>(function WritingBoard(
-  { hanzi, outline, guide, cues, hintAfterMisses, attempt, fit = false, ...callbacks },
+  { hanzi, outline, guide, cues, hintAfterMisses, attempt, fit = false, peek = null, ...callbacks },
   handle,
 ) {
   const { ref, size } = useSquareSize(fit);
@@ -107,6 +109,7 @@ export const WritingBoard = forwardRef<BoardHandle, Props>(function WritingBoard
             {...(cues ?? { written: 0, numbered: false, pulse: null, cue: null })}
           />
         )}
+        {peek && <GuidePeek key={peek.key} hanzi={hanzi} size={size} ms={peek.ms} />}
       </PracticeGrid>
     </div>
   );

@@ -23,19 +23,19 @@ describe('ступени', () => {
 
   it('провал с demote спускает на ступень, один чистый проход возвращает', () => {
     let p = recordStep(EMPTY_PROGRESS, jia.id, 'intro', true);
-    for (const s of ['trace', 'half'] as const) p = times(p, 2, (q) => recordStep(q, jia.id, s, true));
+    for (const s of ['trace', 'half', 'glance'] as const) p = times(p, 2, (q) => recordStep(q, jia.id, s, true));
     expect(stageOf(p, jia.id)).toBe('recall');
     p = recordStep(p, jia.id, 'recall', false, true);
-    expect(stageOf(p, jia.id)).toBe('half');
-    p = recordStep(p, jia.id, 'half', true);
+    expect(stageOf(p, jia.id)).toBe('glance');
+    p = recordStep(p, jia.id, 'glance', true);
     expect(stageOf(p, jia.id)).toBe('recall');
   });
 
-  it('ступень «Точки» выключена: после полуконтура — по памяти, старый прогресс точек не мешает', () => {
+  it('после полуконтура — «Взгляни и напиши»; старый прогресс выключенных «Точек» не мешает', () => {
     let p = recordStep(EMPTY_PROGRESS, jia.id, 'intro', true);
     for (const s of ['trace', 'half'] as const) p = times(p, 2, (q) => recordStep(q, jia.id, s, true));
     p = times(p, 2, (q) => recordResult(q, jia.id, 'dots', true));
-    expect(stageOf(p, jia.id)).toBe('recall');
+    expect(stageOf(p, jia.id)).toBe('glance');
   });
 
   it('провал без demote оставляет на ступени, провал на обводке не спускает к знакомству', () => {
@@ -72,6 +72,18 @@ describe('сессия пути', () => {
     expect(slots).toHaveLength(8);
   });
 
+  it('вопрос о порядке — перед письмом знака на полуконтуре и дальше, если в нём хотя бы 3 черты', () => {
+    let p = EMPTY_PROGRESS;
+    for (const c of [STEMS[0], STEMS[1]]) {
+      p = recordStep(p, c.id, 'intro', true);
+      p = times(p, 2, (q) => recordStep(q, c.id, 'trace', true));
+    }
+    const slots = buildPath(p);
+    // 甲 (5 черт): вопрос и два слота письма; 乙 (1 черта): без вопроса
+    expect(slots.filter((s) => s.char.hanzi === '甲').map((s) => !!s.order)).toEqual([true, false, false]);
+    expect(slots.filter((s) => s.char.hanzi === '乙').some((s) => s.order)).toBe(false);
+  });
+
   it('всё освоено — сессия из повторений по памяти', () => {
     const p = CHARACTERS.reduce(
       (q, c) => times(times(q, 3, (r) => recordResult(r, c.id, 'recall', true)), 2, (r) => recordStep(r, c.id, 'paper', true)),
@@ -81,5 +93,42 @@ describe('сессия пути', () => {
     const slots = buildPath(p);
     expect(slots).toHaveLength(6);
     expect(slots.every((s) => s.review && slotStage(p, s) === 'recall')).toBe(true);
+  });
+});
+
+describe('повторения по дням', () => {
+  const DAY = 86_400_000;
+  const t0 = Date.UTC(2026, 10, 1, 12);
+  const at = (p: Progress, ok: boolean, t: number) => recordResult(p, jia.id, 'recall', ok, t);
+  const interval = (p: Progress) => p.pairs[`${jia.id}:recall`].interval;
+
+  it('интервал растёт, только если повторили в срок: 1 → 3 → 8 дней', () => {
+    let p = at(EMPTY_PROGRESS, true, t0);
+    expect(interval(p)).toBe(1);
+    // Ещё два верных раза тем же вечером интервал не разгоняют
+    p = at(at(p, true, t0 + 60_000), true, t0 + 120_000);
+    expect(interval(p)).toBe(1);
+    p = at(p, true, t0 + DAY);
+    expect(interval(p)).toBe(3);
+    p = at(p, true, t0 + 4 * DAY);
+    expect(interval(p)).toBe(8);
+  });
+
+  it('ошибка сбрасывает интервал — повторить сегодня же', () => {
+    let p = at(at(EMPTY_PROGRESS, true, t0), true, t0 + DAY);
+    p = at(p, false, t0 + 4 * DAY);
+    expect(interval(p)).toBe(0);
+    expect(p.pairs[`${jia.id}:recall`].due).toBe(t0 + 4 * DAY);
+  });
+
+  it('в сессию попадают освоенные знаки, у которых подошёл срок', () => {
+    const learned = (q: Progress, id: string, t: number) =>
+      times(times(q, 3, (r) => recordResult(r, id, 'recall', true, t)), 2, (r) => recordStep(r, id, 'paper', true));
+    // 甲 освоен давно, 乙 — только что; в работе ещё 丙 на обводке
+    let p = learned(EMPTY_PROGRESS, STEMS[0].id, t0 - 10 * DAY);
+    p = learned(p, STEMS[1].id, t0);
+    p = recordStep(p, STEMS[2].id, 'intro', true);
+    const reviews = buildPath(p, [], Math.random, t0).filter((s) => s.review);
+    expect(reviews.map((s) => s.char.hanzi)).toEqual(['甲']);
   });
 });

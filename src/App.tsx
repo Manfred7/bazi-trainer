@@ -233,6 +233,7 @@ export default function App() {
             progress={progress}
             speed={settings.speed}
             onStep={(id, stage, ok, demote) => change((p) => recordStep(p, id, stage, ok, demote))}
+            onOrder={(id, ok) => record(id, 'order', ok)}
             onFinish={() => setScreen({ name: 'pathResult', before: screen.before })}
             onExit={toStart}
           />

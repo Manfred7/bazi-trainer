@@ -952,6 +952,60 @@ input:focus-visible {
   }
 }
 
+/* «Взгляни и напиши»: знак тушью поверх клетки, касания перехватываются; полоска убывает до конца показа */
+.peek {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: var(--paper);
+  border-radius: 4px;
+}
+.peek path {
+  fill: var(--ink);
+}
+.peek__bar {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 6px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform-origin: left;
+  animation: peek-drain linear forwards;
+}
+@keyframes peek-drain {
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* «Какая черта следующая?»: написанное — тушью, остальное — контуром, нажатие по черте */
+.order {
+  display: block;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+.order__done {
+  fill: var(--ink);
+}
+.order__left {
+  fill: var(--outline);
+}
+.order__wrong {
+  fill: var(--bad);
+}
+/* Верная черта после ошибки — зелёным «верно», чтобы не спутать с красной неверной */
+.order__reveal {
+  fill: var(--ok);
+  animation: order-reveal 0.9s ease-in-out infinite alternate;
+}
+@keyframes order-reveal {
+  from {
+    opacity: 0.45;
+  }
+}
+
 /* Тетрадь: три пустые клетки как напоминание */
 .paper-sheet {
   display: flex;
@@ -1083,6 +1137,10 @@ input:focus-visible {
 }
 .panel__note.is-ok {
   color: var(--ok);
+  font-weight: 600;
+}
+.panel__note.due {
+  color: var(--accent);
   font-weight: 600;
 }
 .panel__note.warn {

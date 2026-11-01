@@ -8,16 +8,30 @@ export const MASTERED_LEVEL = 3;
 export const UNLOCK_SHARE = 0.8;
 
 /**
- * По чему ведётся прогресс: знакомство, письмо (обводка, полуконтур, точки, по памяти), тетрадь
- * и каждое направление узнавания
+ * По чему ведётся прогресс: знакомство, письмо (обводка, полуконтур, точки, «взгляни и напиши», по памяти),
+ * тетрадь, вопросы «какая черта следующая?» и каждое направление узнавания
  */
-export type Track = 'study' | 'trace' | 'half' | 'dots' | 'recall' | 'paper' | `quiz:${string}`;
+export type Track = 'study' | 'trace' | 'half' | 'dots' | 'glance' | 'recall' | 'paper' | 'order' | `quiz:${string}`;
 
 export interface PairStats {
   level: number;
   seen: number;
   correct: number;
+  /** Интервальное повторение (только «по памяти»): через сколько дней повторить и когда (мс) */
+  interval?: number;
+  due?: number;
 }
+
+const DAY_MS = 86_400_000;
+/** Интервал повторения растёт так после верного ответа в срок: 1 → 3 → 8 → 20 → 50 → 60 дней */
+const GROWTH = 2.5;
+const MAX_INTERVAL = 60;
+
+/** Следующий интервал после верного ответа, в днях */
+export const nextInterval = (prev?: number) => (prev ? Math.min(MAX_INTERVAL, Math.round(prev * GROWTH)) : 1);
+
+/** Когда знак ждёт повторения по памяти (мс); без истории — уже ждёт */
+export const dueOf = (p: Progress, charId: string) => p.pairs[pairKey(charId, 'recall')]?.due ?? 0;
 
 export interface Progress {
   pairs: Record<string, PairStats>;
@@ -31,8 +45,11 @@ const pairKey = (charId: string, track: Track) => `${charId}:${track}`;
 
 export const levelOf = (p: Progress, charId: string, track: Track) => p.pairs[pairKey(charId, track)]?.level ?? 0;
 
-/** Верно — уровень растёт на 1, ошибка — пара возвращается на 0 */
-export function recordResult(p: Progress, charId: string, track: Track, ok: boolean): Progress {
+/**
+ * Верно — уровень растёт на 1, ошибка — пара возвращается на 0. У «по памяти» ещё и срок повторения:
+ * верно — интервал растёт, ошибка — повторить сегодня же и начать интервалы заново
+ */
+export function recordResult(p: Progress, charId: string, track: Track, ok: boolean, now = Date.now()): Progress {
   const key = pairKey(charId, track);
   const prev = p.pairs[key] ?? { level: 0, seen: 0, correct: 0 };
   const next: PairStats = {
@@ -40,6 +57,12 @@ export function recordResult(p: Progress, charId: string, track: Track, ok: bool
     seen: prev.seen + 1,
     correct: prev.correct + (ok ? 1 : 0),
   };
+  if (track === 'recall') {
+    // Интервал растёт, только если повторили в срок: несколько верных раз за один вечер его не разгоняют
+    const onTime = !prev.due || now >= prev.due - DAY_MS / 2;
+    next.interval = !ok ? 0 : onTime ? nextInterval(prev.interval) : Math.max(1, prev.interval ?? 1);
+    next.due = now + next.interval * DAY_MS;
+  }
   return { ...p, pairs: { ...p.pairs, [key]: next } };
 }
 

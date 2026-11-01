@@ -1,12 +1,9 @@
 import { strokeData } from '../data/strokes';
-import { writerPadding } from './useHanziWriter';
+import { placement, pointAlong } from './geometry';
 
 /** Сколько подсказки под рукой: контур первых черт или точки, откуда начинается каждая черта */
 export type Guide = 'half' | 'dots';
 
-/** Поле данных черт Hanzi Writer: x 0…1024, y −124…900 (ось y вверх) */
-const BOX = 1024;
-const Y_FROM = -124;
 /** Точки начала ближе этого (в единицах поля) сливаются в одну — у 寅 5 и 6, у 辰 4 и 5 */
 const MERGE = 50;
 /**
@@ -25,28 +22,8 @@ const BADGE_CLEAR_BADGE = 78;
 /** Длина стрелки направления от начала черты, в единицах поля */
 const ARROW = 170;
 
-/** Положение знака на холсте — как в Positioner Hanzi Writer, чтобы подсказка легла точно под черты */
-function placement(size: number) {
-  const padding = writerPadding(size);
-  const scale = (size - 2 * padding) / BOX;
-  return { padding, scale, x: (px: number) => padding + px * scale, y: (py: number) => size - padding + (Y_FROM - py) * scale };
-}
-
 /** Сколько первых черт показывать контуром на ступени «Полуконтур» */
 const halfCount = (total: number) => Math.ceil(total / 2);
-
-/** Точка на медиане черты на расстоянии dist от начала */
-function pointAlong(median: number[][], dist: number) {
-  let left = dist;
-  for (let i = 1; i < median.length; i++) {
-    const [ax, ay] = median[i - 1];
-    const [bx, by] = median[i];
-    const seg = Math.hypot(bx - ax, by - ay);
-    if (seg >= left) return [ax + ((bx - ax) * left) / seg, ay + ((by - ay) * left) / seg];
-    left -= seg;
-  }
-  return median[median.length - 1];
-}
 
 /**
  * Изломы черты: места, где направление поворачивает больше чем на CORNER_ANGLE на отрезке ±CORNER_SPAN
@@ -137,15 +114,34 @@ function group(points: number[][], radius: number) {
 /** Контур первых черт под тушью (полуконтур) */
 export function GuideUnder({ hanzi, size }: { hanzi: string; size: number }) {
   const { strokes } = strokeData(hanzi);
-  const { padding, scale } = placement(size);
   return (
     <svg className="guide" width={size} height={size} aria-hidden>
-      <g transform={`translate(${padding}, ${size - padding + Y_FROM * scale}) scale(${scale}, ${-scale})`}>
+      <g transform={placement(size).transform}>
         {strokes.slice(0, halfCount(strokes.length)).map((d, i) => (
           <path key={i} d={d} />
         ))}
       </g>
     </svg>
+  );
+}
+
+/**
+ * «Взгляни и напиши»: знак целиком тушью поверх клетки на ms миллисекунд. Пока он виден, касания
+ * перехватываются — писать поверх образца нельзя, иначе это обводка. Полоска внизу показывает, сколько осталось
+ */
+export function GuidePeek({ hanzi, size, ms }: { hanzi: string; size: number; ms: number }) {
+  const { strokes } = strokeData(hanzi);
+  return (
+    <div className="peek" style={{ width: size, height: size }}>
+      <svg width={size} height={size} aria-hidden>
+        <g transform={placement(size).transform}>
+          {strokes.map((d, i) => (
+            <path key={i} d={d} />
+          ))}
+        </g>
+      </svg>
+      <span className="peek__bar" style={{ animationDuration: `${ms}ms` }} />
+    </div>
   );
 }
 

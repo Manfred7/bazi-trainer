@@ -5,7 +5,7 @@ import { CHARACTERS } from '../data/characters';
 import { DECKS, type Deck, deckById, isAvailable } from '../logic/decks';
 import { useInstall } from '../logic/install';
 import type { Journal } from '../logic/journal';
-import { STAGES, STAGE_LABEL, ladder } from '../logic/path';
+import { STAGES, STAGE_LABEL, dueReviews, ladder } from '../logic/path';
 import { type Progress, UNLOCK_SHARE, mastery } from '../logic/progress';
 import { DIRECTIONS, canAsk, quizMastery } from '../logic/quiz';
 import type { RankProgress } from '../logic/ranks';
@@ -64,6 +64,7 @@ export function StartScreen({
   onDaily,
 }: Props) {
   const counts = ladder(progress);
+  const due = dueReviews(progress).length;
   const { canInstall, iosHint, install } = useInstall();
   const { mode } = settings;
   const track = mode === 'trace' || mode === 'recall' ? mode : null;
@@ -120,9 +121,15 @@ export function StartScreen({
         <button className="btn btn--primary btn--wide" onClick={onPath}>
           Продолжить путь
         </button>
+        {counts.done > 0 && (
+          <p className={`panel__note ${due ? 'due' : ''}`}>
+            {due ? `К повторению сегодня: ${due} ${due === 1 ? 'знак' : due < 5 ? 'знака' : 'знаков'}` : 'Повторения на сегодня сделаны'}
+          </p>
+        )}
         <p className="panel__note">
-          Приложение само ведёт каждый знак: знакомство → обводка → полуконтур → по памяти → тетрадь.
-          Две чистые попытки — ступень пройдена.
+          Приложение само ведёт каждый знак: знакомство → обводка → полуконтур → взгляни и напиши → по памяти →
+          тетрадь. Две чистые попытки — ступень пройдена. Освоенные знаки возвращаются на повторение через 1, 3,
+          8, 20… дней.
         </p>
       </section>
 

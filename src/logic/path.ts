@@ -1,5 +1,15 @@
 import { type BaziChar, CHARACTERS } from '../data/characters';
-import { MASTERED_LEVEL, type Progress, type Track, capLevel, floorLevel, levelOf, recordResult } from './progress';
+import { strokeCount } from '../data/strokes';
+import {
+  MASTERED_LEVEL,
+  type Progress,
+  type Track,
+  capLevel,
+  dueOf,
+  floorLevel,
+  levelOf,
+  recordResult,
+} from './progress';
 
 /**
  * Путь знака: каждый знак проходит ступени от знакомства до письма в тетради.
@@ -7,7 +17,7 @@ import { MASTERED_LEVEL, type Progress, type Track, capLevel, floorLevel, levelO
  * Пройденной считается и ступень, за которой есть засчитанная, — так старый прогресс
  * обводки и письма по памяти сразу продвигает знак по пути.
  */
-export type Stage = 'intro' | 'trace' | 'half' | 'dots' | 'recall' | 'paper' | 'done';
+export type Stage = 'intro' | 'trace' | 'half' | 'dots' | 'glance' | 'recall' | 'paper' | 'done';
 
 export interface StageInfo {
   id: Exclude<Stage, 'done'>;
@@ -23,6 +33,8 @@ export const STAGES: StageInfo[] = [
   // Ступень «Точки» пока выключена: визуально получилось слишком сложно. Подсказки для неё
   // (номера вдоль черт, изломы, «откуда и куда») остаются в StrokeGuide — вернуть можно этой строкой:
   // { id: 'dots', label: 'Точки', track: 'dots', need: 2 },
+  // Мост к письму по памяти: знак виден несколько секунд и исчезает («посмотри — закрой — напиши»)
+  { id: 'glance', label: 'Взгляни и напиши', track: 'glance', need: 2 },
   { id: 'recall', label: 'По памяти', track: 'recall', need: MASTERED_LEVEL },
   { id: 'paper', label: 'Тетрадь', track: 'paper', need: 2 },
 ];
@@ -83,6 +95,8 @@ export interface Slot {
   char: BaziChar;
   /** Повторение освоенного знака: пишем по памяти и знак не спускаем ниже */
   review?: boolean;
+  /** Вопрос «Какая черта следующая?» вместо письма — на ступени не влияет */
+  order?: boolean;
 }
 
 /** Сколько знаков одновременно в работе (между знакомством и тетрадью) */
@@ -91,14 +105,27 @@ export const WINDOW = 4;
 export const NEW_PER_SESSION = 2;
 /** Заданий в тетрадь и повторений освоенного за сессию */
 export const PAPER_PER_SESSION = 3;
-export const REVIEWS_PER_SESSION = 2;
+export const REVIEWS_PER_SESSION = 3;
+/** Вопросов «какая черта следующая?» за сессию; знаку нужно хотя бы столько черт, чтобы было о чём спросить */
+export const ORDER_PER_SESSION = 2;
+export const ORDER_MIN_STROKES = 3;
+/** Ступени, где порядок черт пишется уже без контура или вот-вот без него, — там вопрос полезнее всего */
+const ORDER_STAGES: Stage[] = ['half', 'glance', 'recall'];
+
+/** Освоенные знаки, у которых подошёл срок повторения, — самые просроченные первыми */
+export function dueReviews(p: Progress, now = Date.now()): BaziChar[] {
+  return CHARACTERS.filter((c) => stageOf(p, c.id) === 'done' && dueOf(p, c.id) <= now).sort(
+    (a, b) => dueOf(p, a.id) - dueOf(p, b.id),
+  );
+}
 
 /**
- * Сессия «Продолжить путь». Знаки в работе — по два слота подряд («обвёл — и сразу ещё раз»),
- * новые — по три (знакомство и две обводки), освоенные — повторение по памяти (самые слабые),
- * задания в тетрадь — в конце. Знаки из focus (например, знаки своей карты) идут первыми.
+ * Сессия «Продолжить путь». Знаки в работе — по два слота подряд («написал — и сразу ещё раз»),
+ * новые — по три (знакомство и две обводки), освоенные — повторение по памяти, если подошёл срок,
+ * задания в тетрадь — в конце. Перед письмом знака, где порядок черт ещё путается, — вопрос
+ * «какая черта следующая?». Знаки из focus (например, знаки своей карты) идут первыми.
  */
-export function buildPath(p: Progress, focus: BaziChar[] = [], random = Math.random): Slot[] {
+export function buildPath(p: Progress, focus: BaziChar[] = [], random = Math.random, now = Date.now()): Slot[] {
   const ids = new Set<string>();
   const order = [...focus, ...CHARACTERS].filter((c) => !ids.has(c.id) && ids.add(c.id));
   const by = (pred: (s: Stage) => boolean) => order.filter((c) => pred(stageOf(p, c.id)));
@@ -108,17 +135,33 @@ export function buildPath(p: Progress, focus: BaziChar[] = [], random = Math.ran
   const paper = by((s) => s === 'paper').slice(0, PAPER_PER_SESSION);
   const done = by((s) => s === 'done');
 
-  // Если учить больше нечего — сессия из одних повторений
-  const reviewCount = active.length + fresh.length + paper.length ? REVIEWS_PER_SESSION : 6;
-  const reviews = done
-    .map((c) => ({ c, key: levelOf(p, c.id, 'recall') + random() }))
-    .sort((a, b) => a.key - b.key)
-    .slice(0, reviewCount)
-    .map(({ c }): Slot => ({ char: c, review: true }));
+  // Повторяем то, что пора; если учить больше нечего и срок ни у кого не подошёл — ближайшие по сроку
+  const learning = active.length + fresh.length + paper.length;
+  const due = dueReviews(p, now);
+  const reviewChars = due.length
+    ? due.slice(0, learning ? REVIEWS_PER_SESSION : 6)
+    : learning
+      ? []
+      : [...done].sort((a, b) => dueOf(p, a.id) - dueOf(p, b.id)).slice(0, 6);
+  const reviews = reviewChars.map((c): Slot => ({ char: c, review: true }));
+
+  // Вопросы о порядке — знакам в работе с самым слабым «порядком» (при равенстве — случайно)
+  const asked = new Set(
+    active
+      .filter((c) => ORDER_STAGES.includes(stageOf(p, c.id)) && strokeCount(c.hanzi) >= ORDER_MIN_STROKES)
+      .map((c) => ({ c, key: levelOf(p, c.id, 'order') + random() }))
+      .sort((a, b) => a.key - b.key)
+      .slice(0, ORDER_PER_SESSION)
+      .map(({ c }) => c.id),
+  );
 
   return [
     ...reviews,
-    ...active.flatMap((c): Slot[] => [{ char: c }, { char: c }]),
+    ...active.flatMap((c): Slot[] => [
+      ...(asked.has(c.id) ? [{ char: c, order: true }] : []),
+      { char: c },
+      { char: c },
+    ]),
     ...fresh.flatMap((c): Slot[] => [{ char: c }, { char: c }, { char: c }]),
     ...paper.map((c): Slot => ({ char: c })),
   ];
