@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { PracticeGrid } from './PracticeGrid';
-import { type Guide, StrokeGuide } from './StrokeGuide';
+import { type Guide, GuideOver, GuideUnder } from './StrokeGuide';
 import { useHanziWriter } from './useHanziWriter';
 import { useSquareSize } from './useSquareSize';
 
@@ -25,6 +25,13 @@ interface Props extends BoardCallbacks {
   outline: boolean;
   /** Неполная подсказка без контура: первые черты контуром или точки начала черт */
   guide?: Guide;
+  /** Подсказки поверх клетки при guide: номера точек, мигание при ошибке, «откуда и куда» */
+  cues?: {
+    written: number;
+    numbered: boolean;
+    pulse: { stroke: number; key: number } | null;
+    cue: number | null;
+  };
   /** После скольких ошибок на одной черте показать её анимацией; false — только по кнопке */
   hintAfterMisses: number | false;
   /** Смена значения перезапускает письмо знака с нуля */
@@ -37,7 +44,7 @@ const FLASH_MS = 350;
 
 /** Клетка для письма пальцем: Hanzi Writer проверяет каждую черту по порядку и направлению */
 export const WritingBoard = forwardRef<BoardHandle, Props>(function WritingBoard(
-  { hanzi, outline, guide, hintAfterMisses, attempt, fit = false, ...callbacks },
+  { hanzi, outline, guide, cues, hintAfterMisses, attempt, fit = false, ...callbacks },
   handle,
 ) {
   const { ref, size } = useSquareSize(fit);
@@ -90,8 +97,16 @@ export const WritingBoard = forwardRef<BoardHandle, Props>(function WritingBoard
   return (
     <div ref={ref} className="player__stage">
       <PracticeGrid size={size} miss={flash > 0}>
-        {guide && !outline && <StrokeGuide hanzi={hanzi} size={size} guide={guide} />}
+        {guide === 'half' && !outline && <GuideUnder hanzi={hanzi} size={size} />}
         <div ref={target} className="writer" />
+        {guide && !outline && (
+          <GuideOver
+            hanzi={hanzi}
+            size={size}
+            guide={guide}
+            {...(cues ?? { written: 0, numbered: false, pulse: null, cue: null })}
+          />
+        )}
       </PracticeGrid>
     </div>
   );

@@ -20,13 +20,16 @@ export const STAGES: StageInfo[] = [
   { id: 'intro', label: 'Знакомство', track: 'study', need: 1 },
   { id: 'trace', label: 'Обводка', track: 'trace', need: 2 },
   { id: 'half', label: 'Полуконтур', track: 'half', need: 2 },
-  { id: 'dots', label: 'Точки', track: 'dots', need: 2 },
+  // Ступень «Точки» пока выключена: визуально получилось слишком сложно. Подсказки для неё
+  // (номера вдоль черт, изломы, «откуда и куда») остаются в StrokeGuide — вернуть можно этой строкой:
+  // { id: 'dots', label: 'Точки', track: 'dots', need: 2 },
   { id: 'recall', label: 'По памяти', track: 'recall', need: MASTERED_LEVEL },
   { id: 'paper', label: 'Тетрадь', track: 'paper', need: 2 },
 ];
 
 export const STAGE_LABEL: Record<Stage, string> = {
   ...(Object.fromEntries(STAGES.map((s) => [s.id, s.label])) as Record<StageInfo['id'], string>),
+  dots: 'Точки',
   done: 'Освоен',
 };
 

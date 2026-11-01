@@ -880,9 +880,76 @@ input:focus-visible {
 .guide path {
   fill: var(--outline);
 }
-.guide circle {
+/* Точки и подсказки — поверх туши: точка уже начатой черты не прячется под написанным */
+.guide--over {
+  z-index: 1;
+}
+/*
+ * Иерархия: точка начала — цель (сплошная киноварь), излом — полое кольцо той же киновари,
+ * номер — нейтральный значок цвета бумаги с тёмной цифрой: читается, но не спорит с точками
+ */
+.guide__dot {
   fill: var(--accent);
-  opacity: 0.45;
+}
+.guide__corner {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.guide__lead {
+  stroke: var(--muted);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  opacity: 0.6;
+}
+.guide__badge circle {
+  fill: var(--paper);
+  stroke: var(--grid);
+  stroke-width: 1.5;
+}
+.guide__badge text {
+  fill: var(--ink);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+/* Ошибка: точка ожидаемой черты мигает кольцом */
+.guide__pulse {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  transform-box: fill-box;
+  transform-origin: center;
+  /* После мигания кольцо остаётся погасшим, а не возвращается на место */
+  opacity: 0;
+  animation: guide-pulse 0.9s ease-out 2;
+}
+/* «Подсказка» на точках: откуда и куда вести черту */
+.guide__cue circle {
+  fill: var(--accent);
+}
+.guide__arrow {
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+#guide-arrow path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@keyframes guide-pulse {
+  from {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.8);
+    opacity: 0;
+  }
 }
 
 /* Тетрадь: три пустые клетки как напоминание */
@@ -946,6 +1013,27 @@ input:focus-visible {
 .path .card--study {
   gap: 10px;
   padding-top: 12px;
+}
+/* Клетка письма почти от края до края: отступы экрана и карточки по бокам минимальные */
+.path.screen {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.path .card--study {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.path .card--study > :not(.player__stage):not(.player) {
+  margin-left: 8px;
+  margin-right: 8px;
+}
+/* Строки во всю ширину — отступ внутри, а не снаружи, иначе вылезут за карточку */
+.path .card--study > .step-row,
+.path .card--study > .self-check {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 /* Выбранная оценка остаётся яркой, остальные гаснут */
 .self-check .btn--primary:disabled {

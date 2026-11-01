@@ -55,6 +55,10 @@ export function PathScreen({ slots, progress, speed, onStep, onFinish, onExit }:
   const slot = slots[index];
   stages.current[index] ??= slotStage(progress, slot);
   const stage = stages.current[index];
+  // Номера на «Точках» — тоже на весь шаг: пока у ступени нет ни одной чистой попытки
+  const numberedSlots = useRef<boolean[]>([]);
+  numberedSlots.current[index] ??= stage === 'dots' && stageSteps(progress, slot.char.id, stage).have === 0;
+  const numbered = numberedSlots.current[index];
   const last = index === slots.length - 1;
 
   const record = (ok: boolean, demote = false) => {
@@ -97,7 +101,13 @@ export function PathScreen({ slots, progress, speed, onStep, onFinish, onExit }:
         {move ? (
           <p className={`move move--${move.dir}`}>{move.text}</p>
         ) : (
-          <p className="card__prompt">{slot.review ? 'Повторение: напишите знак по памяти' : PROMPTS[stage]}</p>
+          <p className="card__prompt">
+            {slot.review
+              ? 'Повторение: напишите знак по памяти'
+              : numbered
+                ? 'Номера — в каком порядке писать черты'
+                : PROMPTS[stage]}
+          </p>
         )}
 
         {stage === 'intro' ? (
@@ -105,7 +115,7 @@ export function PathScreen({ slots, progress, speed, onStep, onFinish, onExit }:
         ) : stage === 'paper' ? (
           <PaperStep char={slot.char} speed={speed} recorded={recorded} onResult={record} />
         ) : (
-          <WriteStep char={slot.char} stage={stage} onResult={record} />
+          <WriteStep char={slot.char} stage={stage} numbered={numbered} onResult={record} />
         )}
       </section>
 
@@ -153,13 +163,21 @@ function IntroStep({ char, speed }: { char: BaziChar; speed: Speed }) {
 function WriteStep({
   char,
   stage,
+  numbered,
   onResult,
 }: {
   char: BaziChar;
   stage: Stage;
+  /** Точки с номерами — первая попытка на «Точках»; вторая уже без номеров (фиксируется на весь шаг) */
+  numbered: boolean;
   onResult: (ok: boolean, demote: boolean) => void;
 }) {
   const board = useRef<BoardHandle>(null);
+  /** Мигание точки ожидаемой черты после ошибки */
+  const [pulse, setPulse] = useState<{ stroke: number; key: number } | null>(null);
+  /** Подсказка на «Точках»: точка и стрелка этой черты */
+  const [cue, setCue] = useState<number | null>(null);
+  const guided = stage === 'half' || stage === 'dots';
   const [attempt, setAttempt] = useState(0);
   const [written, setWritten] = useState(0);
   /** Ошибки текущей попытки на клетке */
@@ -191,12 +209,21 @@ function WriteStep({
     else setPractice({ done: false });
     setMistakes(0);
     setWritten(0);
+    setPulse(null);
+    setCue(null);
     setAttempt((a) => a + 1);
   };
 
-  // На обводке и в тренировке подсказка бесплатна: контур и так виден / в счёт не идёт
+  const mistake = (m: number) => {
+    setMistakes(m);
+    if (guided) setPulse({ stroke: written, key: Date.now() });
+  };
+
+  // На обводке и в тренировке подсказка бесплатна: контур и так виден / в счёт не идёт.
+  // На «Точках» подсказка — только откуда и куда вести черту, а не вся черта
   const hint = () => {
-    board.current?.hint();
+    if (stage === 'dots') setCue(written);
+    else board.current?.hint();
     if (stage !== 'trace' && !result) setHints((h) => h + 1);
   };
 
@@ -217,11 +244,12 @@ function WriteStep({
         hanzi={char.hanzi}
         outline={stage === 'trace'}
         guide={stage === 'half' || stage === 'dots' ? stage : undefined}
+        cues={{ written, numbered, pulse, cue }}
         hintAfterMisses={HINT_AFTER[stage] ?? false}
         attempt={attempt}
         fit
         onStroke={setWritten}
-        onMistake={setMistakes}
+        onMistake={mistake}
         onComplete={complete}
       />
       {/* Статус и кнопки — в одну строку, чтобы клетке осталось больше места */}

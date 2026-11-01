@@ -15,7 +15,8 @@ function themeColors() {
   };
 }
 
-export const writerPadding = (size: number) => Math.round(size * 0.06);
+/** Поле между знаком и рамкой клетки: 3% — знак крупнее, но до рамки ещё есть воздух */
+export const writerPadding = (size: number) => Math.round(size * 0.03);
 
 /**
  * Холст Hanzi Writer в div по ref. Пересоздаётся при смене знака; размер и цвета темы

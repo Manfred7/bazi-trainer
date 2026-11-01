@@ -24,11 +24,18 @@ describe('ступени', () => {
   it('провал с demote спускает на ступень, один чистый проход возвращает', () => {
     let p = recordStep(EMPTY_PROGRESS, jia.id, 'intro', true);
     for (const s of ['trace', 'half'] as const) p = times(p, 2, (q) => recordStep(q, jia.id, s, true));
-    expect(stageOf(p, jia.id)).toBe('dots');
-    p = recordStep(p, jia.id, 'dots', false, true);
+    expect(stageOf(p, jia.id)).toBe('recall');
+    p = recordStep(p, jia.id, 'recall', false, true);
     expect(stageOf(p, jia.id)).toBe('half');
     p = recordStep(p, jia.id, 'half', true);
-    expect(stageOf(p, jia.id)).toBe('dots');
+    expect(stageOf(p, jia.id)).toBe('recall');
+  });
+
+  it('ступень «Точки» выключена: после полуконтура — по памяти, старый прогресс точек не мешает', () => {
+    let p = recordStep(EMPTY_PROGRESS, jia.id, 'intro', true);
+    for (const s of ['trace', 'half'] as const) p = times(p, 2, (q) => recordStep(q, jia.id, s, true));
+    p = times(p, 2, (q) => recordResult(q, jia.id, 'dots', true));
+    expect(stageOf(p, jia.id)).toBe('recall');
   });
 
   it('провал без demote оставляет на ступени, провал на обводке не спускает к знакомству', () => {

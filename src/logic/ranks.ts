@@ -3,7 +3,7 @@ import { STAGES, stageIndex, stageOf } from './path';
 import type { Progress } from './progress';
 
 /**
- * Звания ученика. Растут от двух вещей: пройденных ступеней пути (у 22 знаков по 6 ступеней — всего 132)
+ * Звания ученика. Растут от двух вещей: пройденных ступеней пути (у 22 знаков по 5 ступеней — всего 110)
  * и дней, когда столп дня записан в тетрадь. Гранд мастер — все знаки освоены и столп дня записан
  * 60 дней: полный цикл 甲子 … 癸亥. Полученное звание не отнимается, даже если знак спустился на ступень.
  */
@@ -21,9 +21,9 @@ export const MAX_STEPS = CHARACTERS.length * STAGES.length;
 export const RANKS: Rank[] = [
   { id: 'novice', title: 'Новичок', steps: 0, days: 0 },
   { id: 'amateur', title: 'Любитель', steps: 10, days: 0 },
-  { id: 'adept', title: 'Адепт', steps: 35, days: 3 },
-  { id: 'master', title: 'Мастер', steps: 70, days: 10 },
-  { id: 'magister', title: 'Магистр', steps: 110, days: 30 },
+  { id: 'adept', title: 'Адепт', steps: 30, days: 3 },
+  { id: 'master', title: 'Мастер', steps: 55, days: 10 },
+  { id: 'magister', title: 'Магистр', steps: 85, days: 30 },
   { id: 'grandmaster', title: 'Гранд мастер', steps: MAX_STEPS, days: 60 },
 ];
 
