@@ -353,7 +353,8 @@ function WriteStep({
 
 /**
  * «Какая черта следующая?»: знак написан до случайной черты, нажимаем следующую — ORDER_QUESTIONS раз подряд.
- * Неверная мигает, верная подсвечивается, пока её не нажмут. Засчитано, если ни одной ошибки
+ * Неверная мигает, верная подсвечивается, пока её не нажмут. Засчитано, если ни одной ошибки.
+ * После засчитанных вопросов знак можно дособрать до конца — это уже не в счёт
  */
 function OrderStep({ char, onResult }: { char: BaziChar; onResult: (ok: boolean) => void }) {
   const total = strokeCount(char.hanzi);
@@ -365,15 +366,14 @@ function OrderStep({ char, onResult }: { char: BaziChar; onResult: (ok: boolean)
   const done = written >= start + asked;
 
   const answer = (stroke: number) => {
-    if (done) return;
     if (stroke !== written) {
-      setMistakes((m) => m + 1);
+      if (!done) setMistakes((m) => m + 1);
       setReveal(true);
       return;
     }
     setReveal(false);
     setWritten(written + 1);
-    if (written + 1 >= start + asked) onResult(mistakes === 0);
+    if (written + 1 === start + asked) onResult(mistakes === 0);
   };
 
   return (
@@ -383,9 +383,7 @@ function OrderStep({ char, onResult }: { char: BaziChar; onResult: (ok: boolean)
       <div className="step-row">
         <p className={`player__status ${done ? (mistakes ? 'is-bad' : 'is-ok') : ''}`}>
           {done
-            ? mistakes
-              ? `Готово · ошибок: ${mistakes}`
-              : 'Всё верно'
+            ? `${mistakes ? `Готово · ошибок: ${mistakes}` : 'Всё верно'} · ${written < total ? `черта ${written + 1} из ${total}` : 'знак собран'}`
             : `Вопрос ${written - start + 1} из ${asked} · черта ${written + 1} из ${total}${mistakes ? ` · ошибок: ${mistakes}` : ''}`}
         </p>
       </div>

@@ -6,6 +6,8 @@ import { useSquareSize } from './useSquareSize';
 
 /** Нажатие дальше этого от любой оставшейся черты (в единицах поля) — мимо, не ответ */
 const HIT = 110;
+/** Нажатие так близко к ожидаемой черте — засчитывается ей, даже если рядом проходит другая (пересечение черт) */
+const ON_STROKE = 40;
 const FLASH_MS = 700;
 
 interface Props {
@@ -41,6 +43,7 @@ export function OrderBoard({ hanzi, written, onAnswer, reveal }: Props) {
         best = i;
       }
     });
+    if (written < medians.length && distanceToMedian(point, medians[written]) < ON_STROKE) best = written;
     if (best < 0) return;
     if (best !== written) {
       const key = Date.now();
