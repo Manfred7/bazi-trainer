@@ -143,7 +143,7 @@ export function StartScreen({
 
       <DailyCard progress={progress} daily={journal.daily} onDone={onDaily} />
 
-      {rank.index >= CHAINS_FROM_RANK && (
+      {(rank.index >= CHAINS_FROM_RANK || settings.unlockAll) && (
         <section className="panel">
           <div className="panel__head">
             <h2>Цепочки столпов</h2>
