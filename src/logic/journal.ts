@@ -14,6 +14,8 @@ export interface Journal {
   charts: SavedChart[];
   /** Дни («ГГГГ-ММ-ДД»), когда столп дня записан в тетрадь */
   daily: string[];
+  /** Дни, когда написана чистая цепочка столпов */
+  chains: string[];
   /** Учить по пути сначала знаки своей карты */
   focusChart: boolean;
   /** Высшее полученное звание (номер в RANKS) — звание не отнимается */
@@ -27,7 +29,7 @@ export interface Award {
   at: string;
 }
 
-export const EMPTY_JOURNAL: Journal = { charts: [], daily: [], focusChart: true, bestRank: 0, awards: [] };
+export const EMPTY_JOURNAL: Journal = { charts: [], daily: [], chains: [], focusChart: true, bestRank: 0, awards: [] };
 
 const AT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 
@@ -75,6 +77,7 @@ export function loadJournal(): Journal {
     return {
       charts: Array.isArray(parsed.charts) ? parsed.charts.filter(isChart) : [],
       daily: Array.isArray(parsed.daily) ? parsed.daily.filter((d) => typeof d === 'string' && ISO.test(d)) : [],
+      chains: Array.isArray(parsed.chains) ? parsed.chains.filter((d) => typeof d === 'string' && ISO.test(d)) : [],
       focusChart: parsed.focusChart !== false,
       bestRank: Number.isInteger(parsed.bestRank) && parsed.bestRank! > 0 ? parsed.bestRank! : 0,
       awards: Array.isArray(parsed.awards)

@@ -13,7 +13,7 @@ interface Props {
 /** Мой путь: звания по порядку, когда присвоены — датой и четырьмя столпами того момента; дальше — следующее */
 export function HistoryScreen({ awards, rank, progress, onExit }: Props) {
   const byRank = new Map(awards.map((a) => [a.rank, a]));
-  const { next, share, steps, days } = rank;
+  const { next, share, steps, days, chains } = rank;
 
   return (
     <main className="screen">
@@ -57,6 +57,7 @@ export function HistoryScreen({ awards, rank, progress, onExit }: Props) {
               <span className="muted">
                 Ступеней {Math.min(steps, next.steps)}/{next.steps}
                 {next.days > 0 && ` · дней столпа ${Math.min(days, next.days)}/${next.days}`}
+                {next.chains > 0 && ` · дней цепочек ${Math.min(chains, next.chains)}/${next.chains}`}
               </span>
             </div>
           </li>

@@ -23,7 +23,9 @@ describe('звания', () => {
     expect(RANKS[rankIndex(40, 0)].title).toBe('Любитель');
     expect(RANKS[rankIndex(40, 3)].title).toBe('Адепт');
     expect(RANKS[rankIndex(MAX_STEPS, 59)].title).toBe('Магистр');
-    expect(RANKS[rankIndex(MAX_STEPS, 60)].title).toBe('Гранд мастер');
+    expect(RANKS[rankIndex(MAX_STEPS, 60)].title).toBe('Магистр');
+    expect(RANKS[rankIndex(MAX_STEPS, 60, 0, 11)].title).toBe('Магистр');
+    expect(RANKS[rankIndex(MAX_STEPS, 60, 0, 12)].title).toBe('Гранд мастер');
   });
 
   it('полученное звание не отнимается', () => {

@@ -1600,3 +1600,48 @@ input:focus-visible {
     transition: none !important;
   }
 }
+
+/* Цепочка столпов: вся карта над клеткой письма */
+.chain-map {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  width: 100%;
+}
+.chain-map__col {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+  gap: 2px;
+}
+.chain-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--el);
+  font-family: var(--font-serif);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.chain-cell.is-written {
+  color: var(--ink);
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+.chain-cell.is-bad {
+  color: var(--bad);
+}
+.chain-cell.is-current {
+  border-color: var(--accent);
+}
+.chain-map--done .chain-cell {
+  height: 72px;
+}
+.chain-map--done .chain-cell.is-written {
+  font-size: 3rem;
+}

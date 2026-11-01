@@ -24,7 +24,7 @@ export function RankEmblem({ index, size = 64, locked = false }: { index: number
 /** Звание, шкала до следующего и что для него нужно; по нажатию — лестница всех званий */
 export function RankCard({ progress, onHistory }: { progress: RankProgress; onHistory: () => void }) {
   const [open, setOpen] = useState(false);
-  const { rank, index, next, share, steps, days } = progress;
+  const { rank, index, next, share, steps, days, chains } = progress;
 
   return (
     <section className="panel rank">
@@ -44,6 +44,7 @@ export function RankCard({ progress, onHistory }: { progress: RankProgress; onHi
               <>
                 До «{next.title}»: ступеней {Math.min(steps, next.steps)}/{next.steps}
                 {next.days > 0 && ` · дней столпа ${Math.min(days, next.days)}/${next.days}`}
+                {next.chains > 0 && ` · дней цепочек ${Math.min(chains, next.chains)}/${next.chains}`}
               </>
             ) : (
               'Высшее звание — полный цикл пройден'
@@ -63,7 +64,7 @@ export function RankCard({ progress, onHistory }: { progress: RankProgress; onHi
                   <span className="muted">
                     {i === 0
                       ? 'Начало пути'
-                      : `${r.steps} ступеней${r.days ? ` · ${r.days} ${r.days === 3 ? 'дня' : 'дней'} столпа` : ''}`}
+                      : `${r.steps} ступеней${r.days ? ` · ${r.days} ${r.days === 3 ? 'дня' : 'дней'} столпа` : ''}${r.chains ? ` · ${r.chains} дней цепочек` : ''}`}
                   </span>
                 </span>
               </li>
@@ -71,7 +72,8 @@ export function RankCard({ progress, onHistory }: { progress: RankProgress; onHi
           </ol>
           <p className="panel__note">
             Ступень — шаг одного знака по пути (у 22 знаков по 6 ступеней). Дни столпа — сколько дней столп дня
-            записан в тетрадь. Полученное звание не отнимается.
+            записан в тетрадь. Дни цепочек — дни, когда четыре столпа написаны подряд почти без ошибок; цепочки
+            открываются на звании «Мастер». Полученное звание не отнимается.
           </p>
         </>
       )}
@@ -129,8 +131,8 @@ export function RankUp({
         )}
         <p className="muted">
           {next
-            ? `Следующее — «${next.title}»: ${next.steps} ступеней${next.days ? ` и ${next.days} ${next.days === 3 ? 'дня' : 'дней'} столпа` : ''}.`
-            : 'Все знаки освоены, цикл из 60 дней пройден.'}
+            ? `Следующее — «${next.title}»: ${next.steps} ступеней${next.days ? ` и ${next.days} ${next.days === 3 ? 'дня' : 'дней'} столпа` : ''}${next.chains ? ` и ${next.chains} дней чистых цепочек` : ''}.`
+            : 'Все знаки освоены, цикл из 60 дней пройден, столпы пишутся цепочками.'}
         </p>
         <button className="btn btn--primary btn--wide" onClick={onClose} autoFocus>
           Продолжить

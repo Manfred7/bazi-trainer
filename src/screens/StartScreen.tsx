@@ -4,11 +4,13 @@ import { Seal } from '../components/Seal';
 import { CHARACTERS } from '../data/characters';
 import { DECKS, type Deck, deckById, isAvailable } from '../logic/decks';
 import { useInstall } from '../logic/install';
+import { todayIso } from '../logic/calendar';
+import { CHAINS_FROM_RANK, CHAIN_PASS_MISTAKES } from '../logic/chain';
 import type { Journal } from '../logic/journal';
 import { STAGES, STAGE_LABEL, dueReviews, ladder } from '../logic/path';
 import { type Progress, UNLOCK_SHARE, mastery } from '../logic/progress';
 import { DIRECTIONS, canAsk, quizMastery } from '../logic/quiz';
-import type { RankProgress } from '../logic/ranks';
+import { RANKS, type RankProgress } from '../logic/ranks';
 import { PASS_MISTAKES } from '../logic/session';
 import { MODES, QUIZ_LENGTHS, SESSION_LENGTHS, type Settings } from '../logic/settings';
 import { THEMES } from '../logic/theme';
@@ -30,6 +32,8 @@ interface Props {
   onHistory: () => void;
   onStats: () => void;
   onDaily: (ok: boolean | null) => void;
+  /** Начать цепочку: столпы этого момента или случайной даты */
+  onChain: (moment: boolean) => void;
 }
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
@@ -64,8 +68,10 @@ export function StartScreen({
   onHistory,
   onStats,
   onDaily,
+  onChain,
 }: Props) {
   const counts = ladder(progress);
+  const chainsNeed = RANKS[RANKS.length - 1].chains;
   const due = dueReviews(progress).length;
   const { canInstall, iosHint, install } = useInstall();
   const { mode } = settings;
@@ -136,6 +142,30 @@ export function StartScreen({
       </section>
 
       <DailyCard progress={progress} daily={journal.daily} onDone={onDaily} />
+
+      {rank.index >= CHAINS_FROM_RANK && (
+        <section className="panel">
+          <div className="panel__head">
+            <h2>Цепочки столпов</h2>
+            <span className="panel__note">
+              Чистых дней: {Math.min(journal.chains.length, chainsNeed)} из {chainsNeed}
+            </span>
+          </div>
+          <p className="panel__note">
+            Год, месяц, день и час — восемь знаков подряд по памяти, по чтениям. Цепочка чистая, если ошибок не больше{' '}
+            {CHAIN_PASS_MISTAKES}. Чистые дни нужны для звания «Гранд мастер».
+            {journal.chains.includes(todayIso()) && ' Сегодня уже засчитано.'}
+          </p>
+          <div className="study__nav">
+            <button className="btn" onClick={() => onChain(true)}>
+              Этот момент
+            </button>
+            <button className="btn btn--primary" onClick={() => onChain(false)}>
+              Случайная дата
+            </button>
+          </div>
+        </section>
+      )}
 
       <div className="study__nav">
         <button className="btn" onClick={onCharts}>

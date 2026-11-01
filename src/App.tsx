@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { BaziChar } from './data/characters';
 import { chartChars, chartFor, parseIso, todayIso } from './logic/calendar';
+import { type Chain, momentChain, randomChain } from './logic/chain';
 import { DECKS, type Deck, deckById, isAvailable, withUnlocks } from './logic/decks';
 import { EMPTY_JOURNAL, type Journal, chartOf, loadJournal, saveJournal, withAwards } from './logic/journal';
 import { type Slot, type Stage, buildPath, recordStep, stageOf } from './logic/path';
@@ -16,11 +17,12 @@ import {
 import { DIRECTIONS, type Direction, type QuizAnswer, isCorrect, quizMastery, quizTrack } from './logic/quiz';
 import type { WriteResult } from './logic/session';
 import { type Settings, loadSettings, saveSettings } from './logic/settings';
-import { rankProgress } from './logic/ranks';
+import { RANKS, rankProgress } from './logic/ranks';
 import { clearStats } from './logic/stats';
 import { watchTheme } from './logic/theme';
 import { RankUp } from './components/RankBadge';
 import { useAppUpdate } from './logic/update';
+import { ChainScreen } from './screens/ChainScreen';
 import { ChartScreen } from './screens/ChartScreen';
 import { CycleScreen } from './screens/CycleScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
@@ -59,6 +61,7 @@ type Screen =
   | { name: 'result'; session: Session; results: WriteResult[]; summary: SessionSummary }
   | { name: 'path'; slots: Slot[]; before: Before; run: number }
   | { name: 'pathResult'; before: Before }
+  | { name: 'chain'; chain: Chain; run: number }
   | { name: 'charts' }
   | { name: 'cycle' }
   | { name: 'history' }
@@ -80,7 +83,7 @@ export default function App() {
   const update = useAppUpdate();
   /** Только что полученное звание: поздравление ждёт старта или итогов, чтобы не мешать письму */
   const [rankUp, setRankUp] = useState<number | null>(null);
-  const rank = rankProgress(progress, journal.daily.length, journal.bestRank);
+  const rank = rankProgress(progress, journal.daily.length, journal.bestRank, journal.chains.length);
 
   useEffect(() => watchTheme(settings.theme), [settings.theme]);
 
@@ -158,6 +161,14 @@ export default function App() {
     if (!journal.daily.includes(today)) updateJournal({ ...journal, daily: [...journal.daily, today] });
   };
 
+  const beginChain = (chain: Chain) => setScreen({ name: 'chain', chain, run: Date.now() });
+
+  /** Чистая цепочка: день засчитан один раз, сколько бы цепочек ни написали */
+  const chainDone = (clean: boolean) => {
+    const today = todayIso();
+    if (clean && !journal.chains.includes(today)) updateJournal({ ...journal, chains: [...journal.chains, today] });
+  };
+
   const begin = (mode: SessionMode, d: Deck, chars: BaziChar[], length: number, dirs = directions) =>
     setScreen({
       name: 'session',
@@ -228,6 +239,7 @@ export default function App() {
             onHistory={() => setScreen({ name: 'history' })}
             onStats={() => setScreen({ name: 'stats' })}
             onDaily={daily}
+            onChain={(moment) => beginChain(moment ? momentChain() : randomChain())}
           />
         );
       case 'path':
@@ -240,6 +252,18 @@ export default function App() {
             onStep={(id, stage, ok, demote) => change((p) => recordStep(p, id, stage, ok, demote))}
             onOrder={(id, ok) => record(id, 'order', ok)}
             onFinish={() => setScreen({ name: 'pathResult', before: screen.before })}
+            onExit={toStart}
+          />
+        );
+      case 'chain':
+        return (
+          <ChainScreen
+            key={screen.run}
+            chain={screen.chain}
+            cleanDays={journal.chains.length}
+            needDays={RANKS[RANKS.length - 1].chains}
+            onDone={chainDone}
+            onAgain={() => beginChain(randomChain())}
             onExit={toStart}
           />
         );
