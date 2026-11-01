@@ -1,3 +1,4 @@
+import type { StrokeData } from 'hanzi-writer';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { PracticeGrid } from './PracticeGrid';
 import { type Guide, GuideOver, GuidePeek, GuideUnder } from './StrokeGuide';
@@ -7,7 +8,8 @@ import { useSquareSize } from './useSquareSize';
 export interface BoardCallbacks {
   /** Засчитана черта: сколько уже написано */
   onStroke?: (written: number) => void;
-  onMistake?: (totalMistakes: number) => void;
+  /** Черта не засчитана: всё, что сообщил Hanzi Writer, включая сам штрих (его не хранить) */
+  onMistake?: (s: StrokeData) => void;
   onComplete: (totalMistakes: number) => void;
 }
 
@@ -74,7 +76,7 @@ export const WritingBoard = forwardRef<BoardHandle, Props>(function WritingBoard
       },
       onMistake: (s) => {
         setFlash((f) => f + 1);
-        cb.current.onMistake?.(s.totalMistakes);
+        cb.current.onMistake?.(s);
       },
       onComplete: ({ totalMistakes }) => cb.current.onComplete(totalMistakes),
     });

@@ -145,6 +145,20 @@ export function GuidePeek({ hanzi, size, ms }: { hanzi: string; size: number; ms
   );
 }
 
+/** Знак с одной выделенной киноварью чертой — для статистики */
+export function StrokeFocus({ hanzi, stroke, size }: { hanzi: string; stroke: number; size: number }) {
+  const { strokes } = strokeData(hanzi);
+  return (
+    <svg className="stroke-focus" width={size} height={size} role="img" aria-label={`Знак ${hanzi}, черта ${stroke + 1}`}>
+      <g transform={placement(size).transform}>
+        {strokes.map((d, i) => (
+          <path key={i} d={d} className={i === stroke ? 'is-on' : ''} />
+        ))}
+      </g>
+    </svg>
+  );
+}
+
 interface OverProps {
   hanzi: string;
   size: number;

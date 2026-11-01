@@ -57,6 +57,14 @@ const LOOKALIKES: Record<string, string[]> = {
   辛: ['幸'],
 };
 
+/** Иероглиф варианта ответа по его id; у вариантов-стихий его нет */
+export function optionHanzi(id: string): string | undefined {
+  return id.startsWith('extra-') ? id.slice('extra-'.length) : CHARACTERS.find((c) => c.id === id)?.hanzi;
+}
+
+/** Выбран знак из пары похожих по виду (LOOKALIKES) */
+export const isLookalike = (a: QuizAnswer) => !!LOOKALIKES[a.question.char.hanzi]?.includes(optionHanzi(a.pickedId) ?? '');
+
 export function shuffle<T>(items: T[]): T[] {
   const a = [...items];
   for (let i = a.length - 1; i > 0; i--) {

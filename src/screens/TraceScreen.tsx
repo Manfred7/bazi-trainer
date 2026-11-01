@@ -5,6 +5,7 @@ import { WritingBoard } from '../components/WritingBoard';
 import type { BaziChar } from '../data/characters';
 import { strokeCount } from '../data/strokes';
 import { type WriteResult, isPass } from '../logic/session';
+import { logEvent, logStrokeMistake } from '../logic/stats';
 
 interface Props {
   chars: BaziChar[];
@@ -40,12 +41,19 @@ export function TraceScreen({ chars, onResult, onFinish, onExit }: Props) {
   const complete = (m: number) => {
     setMistakes(m);
     setDone(true);
+    logEvent(char.id, 'trace', { kind: 'done', mistakes: m });
     // В счёт идёт первая попытка: «Заново» — для практики, на прогресс не влияет
     if (results.length === index) {
       const r = { char, mistakes: m, ok: isPass(m) };
       setResults([...results, r]);
       onResult(r);
     }
+  };
+
+  /** «Заново» посреди знака записываем: на этой черте сбились; после конца знака это просто ещё раз */
+  const again = () => {
+    if (!done && (written > 0 || mistakes > 0)) logEvent(char.id, 'trace', { kind: 'restart', stroke: written });
+    reset();
   };
 
   const next = () => {
@@ -74,7 +82,10 @@ export function TraceScreen({ chars, onResult, onFinish, onExit }: Props) {
           hintAfterMisses={HINT_AFTER}
           attempt={attempt}
           onStroke={setWritten}
-          onMistake={setMistakes}
+          onMistake={(s) => {
+            setMistakes(s.totalMistakes);
+            logStrokeMistake(char, 'trace', s);
+          }}
           onComplete={complete}
         />
         <p className={`player__status ${done ? (isPass(mistakes) ? 'is-ok' : 'is-bad') : ''}`}>
@@ -88,7 +99,7 @@ export function TraceScreen({ chars, onResult, onFinish, onExit }: Props) {
       </section>
 
       <div className="study__nav">
-        <button className="btn" onClick={reset}>
+        <button className="btn" onClick={again}>
           ↺ Заново
         </button>
         <button className="btn btn--primary" onClick={next} disabled={results.length <= index}>

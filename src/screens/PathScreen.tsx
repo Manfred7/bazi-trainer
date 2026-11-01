@@ -1,3 +1,4 @@
+import type { StrokeData } from 'hanzi-writer';
 import { useEffect, useRef, useState } from 'react';
 import { CharacterAsk, CharacterInfo } from '../components/CharacterCard';
 import { OrderBoard } from '../components/OrderBoard';
@@ -19,6 +20,7 @@ import {
 import type { Progress } from '../logic/progress';
 import { isPass } from '../logic/session';
 import type { Speed } from '../logic/settings';
+import { type PaperReason, logEvent, logStrokeMistake } from '../logic/stats';
 
 interface Props {
   slots: Slot[];
@@ -78,6 +80,8 @@ export function PathScreen({ slots, progress, speed, onStep, onOrder, onFinish, 
   const record = (ok: boolean, demote = false) => {
     if (slot.order) onOrder(slot.char.id, ok);
     else onStep(slot.char.id, stage, ok, demote);
+    // С обводки спускаться некуда (recordStep), такое понижением не считаем
+    if (demote && !slot.order && stageIndex(stage) > stageIndex('trace')) logEvent(slot.char.id, stage, { kind: 'demote' });
     setRecorded(true);
   };
 
@@ -234,16 +238,22 @@ function WriteStep({
 
   const complete = (m: number) => {
     setMistakes(m);
-    if (result) return setPractice({ done: true });
+    if (result) {
+      logEvent(char.id, stage, { kind: 'done', mistakes: m });
+      return setPractice({ done: true });
+    }
     const sum = carry + m + hints;
+    logEvent(char.id, stage, { kind: 'done', mistakes: sum });
     setResult({ ok: isPass(sum), mistakes: sum });
     onResult(isPass(sum), sum >= DEMOTE_MISTAKES);
   };
 
   /** Переписать знак: до конца — ошибки остаются в счёте, после — тренировка без влияния на прогресс */
   const restart = () => {
-    if (!result) setCarry((c) => c + mistakes);
-    else {
+    if (!result) {
+      setCarry((c) => c + mistakes);
+      logEvent(char.id, stage, { kind: 'restart', stroke: written });
+    } else {
       setPractice({ done: false });
       // Тренировочный круг «Взгляни и напиши» снова начинается со взгляда — бесплатно, в счёт он не идёт
       if (glance) setPeek({ ms: glanceMs, key: Date.now() });
@@ -255,8 +265,9 @@ function WriteStep({
     setAttempt((a) => a + 1);
   };
 
-  const mistake = (m: number) => {
-    setMistakes(m);
+  const mistake = (s: StrokeData) => {
+    setMistakes(s.totalMistakes);
+    logStrokeMistake(char, stage, s);
     if (guided) setPulse({ stroke: written, key: Date.now() });
   };
 
@@ -268,6 +279,7 @@ function WriteStep({
     else if (glance) setPeek({ ms: glanceMs, key: Date.now() });
     else board.current?.hint();
     if (stage !== 'trace' && !result) setHints((h) => h + 1);
+    logEvent(char.id, stage, { kind: 'hint', stroke: written });
   };
 
   const progressText = `${showTotal ? `Черта ${Math.min(written + 1, total)} из ${total}` : `Черт: ${written}`}`;
@@ -381,6 +393,12 @@ function OrderStep({ char, onResult }: { char: BaziChar; onResult: (ok: boolean)
   );
 }
 
+const SELF_CHECK: { id: PaperReason; label: string; ok: boolean; demote: boolean }[] = [
+  { id: 'ok', label: 'Верно', ok: true, demote: false },
+  { id: 'order', label: 'Ошибся в порядке', ok: false, demote: false },
+  { id: 'forgot', label: 'Не вспомнил', ok: false, demote: true },
+];
+
 /** Тетрадь: пишем на бумаге, потом сверяем с анимацией порядка черт и честно оцениваем себя */
 function PaperStep({
   char,
@@ -395,8 +413,9 @@ function PaperStep({
 }) {
   const [checking, setChecking] = useState(false);
   const [choice, setChoice] = useState<string | null>(null);
-  const answer = (id: string, ok: boolean, demote: boolean) => {
+  const answer = (id: PaperReason, ok: boolean, demote: boolean) => {
     setChoice(id);
+    logEvent(char.id, 'paper', { kind: 'paper', reason: id });
     onResult(ok, demote);
   };
 
@@ -422,11 +441,7 @@ function PaperStep({
       <StrokePlayer hanzi={char.hanzi} speed={speed} fit />
       <p className="muted">Как получилось в тетради?</p>
       <div className="self-check">
-        {[
-          { id: 'ok', label: 'Верно', ok: true, demote: false },
-          { id: 'order', label: 'Ошибся в порядке', ok: false, demote: false },
-          { id: 'forgot', label: 'Не вспомнил', ok: false, demote: true },
-        ].map((o) => (
+        {SELF_CHECK.map((o) => (
           <button
             key={o.id}
             className={`btn ${choice === o.id ? 'btn--primary' : ''}`}

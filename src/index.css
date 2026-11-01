@@ -1511,6 +1511,87 @@ input:focus-visible {
   }
 }
 
+/* ---------- Моя статистика ---------- */
+
+.stats p {
+  margin: 0;
+}
+.stats__list,
+.stats__pairs,
+.shares {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.stats__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.stats__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.stats__hanzi {
+  font-size: 2.25rem;
+  line-height: 1;
+  width: 72px;
+  text-align: center;
+  flex: none;
+}
+.stats__steady {
+  font-size: 1.5rem;
+  overflow-wrap: anywhere;
+}
+.stats__pairs li {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.stats__pair {
+  font-size: 1.5rem;
+}
+.stats__facts {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.stroke-focus {
+  flex: none;
+  background: var(--paper);
+  border: 1px solid var(--grid);
+  border-radius: 8px;
+}
+.stroke-focus path {
+  fill: var(--outline);
+}
+.stroke-focus path.is-on {
+  fill: var(--accent);
+}
+.shares__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  font-size: 0.875rem;
+}
+.shares__row .bar {
+  grid-column: 1 / -1;
+}
+.shares__value {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

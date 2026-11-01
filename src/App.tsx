@@ -17,6 +17,7 @@ import { DIRECTIONS, type Direction, type QuizAnswer, isCorrect, quizMastery, qu
 import type { WriteResult } from './logic/session';
 import { type Settings, loadSettings, saveSettings } from './logic/settings';
 import { rankProgress } from './logic/ranks';
+import { clearStats } from './logic/stats';
 import { watchTheme } from './logic/theme';
 import { RankUp } from './components/RankBadge';
 import { useAppUpdate } from './logic/update';
@@ -29,6 +30,7 @@ import { QuizScreen } from './screens/QuizScreen';
 import { RecallScreen } from './screens/RecallScreen';
 import { ResultScreen, type SessionSummary } from './screens/ResultScreen';
 import { StartScreen } from './screens/StartScreen';
+import { StatsScreen } from './screens/StatsScreen';
 import { StudyScreen } from './screens/StudyScreen';
 import { TraceScreen } from './screens/TraceScreen';
 
@@ -59,7 +61,8 @@ type Screen =
   | { name: 'pathResult'; before: Before }
   | { name: 'charts' }
   | { name: 'cycle' }
-  | { name: 'history' };
+  | { name: 'history' }
+  | { name: 'stats' };
 
 function deckMastery(p: Progress, mode: SessionMode, deck: Deck, directions: Direction[]) {
   return mode === 'quiz' ? quizMastery(p, deck.chars, directions) : mastery(p, deck.chars, mode);
@@ -106,11 +109,12 @@ export default function App() {
     saveJournal(j);
   };
 
-  /** Полный сброс: знаки, звания с историей, дни столпа и карты; «Новичок» запишется заново. Настройки вида остаются */
+  /** Полный сброс: знаки, звания с историей, дни столпа, карты и статистика; «Новичок» запишется заново. Настройки вида остаются */
   const resetProgress = () => {
     setProgress(EMPTY_PROGRESS);
     saveProgress(EMPTY_PROGRESS);
     updateJournal(EMPTY_JOURNAL);
+    clearStats();
     setRankUp(null);
   };
 
@@ -222,6 +226,7 @@ export default function App() {
             onCharts={() => setScreen({ name: 'charts' })}
             onCycle={() => setScreen({ name: 'cycle' })}
             onHistory={() => setScreen({ name: 'history' })}
+            onStats={() => setScreen({ name: 'stats' })}
             onDaily={daily}
           />
         );
@@ -246,6 +251,8 @@ export default function App() {
         );
       case 'history':
         return <HistoryScreen awards={journal.awards} rank={rank} progress={progress} onExit={toStart} />;
+      case 'stats':
+        return <StatsScreen progress={progress} onExit={toStart} />;
       case 'cycle':
         return (
           <CycleScreen

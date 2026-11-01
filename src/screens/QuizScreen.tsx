@@ -3,7 +3,17 @@ import { CharacterInfo } from '../components/CharacterCard';
 import { SessionTop } from '../components/SessionTop';
 import type { BaziChar } from '../data/characters';
 import type { Progress } from '../logic/progress';
-import { type Direction, type Option, type Question, type QuizAnswer, makeQuestion } from '../logic/quiz';
+import {
+  type Direction,
+  type Option,
+  type Question,
+  type QuizAnswer,
+  isCorrect,
+  isLookalike,
+  makeQuestion,
+  quizTrack,
+} from '../logic/quiz';
+import { logEvent } from '../logic/stats';
 
 export interface QuizConfig {
   /** Из каких знаков спрашивать */
@@ -90,7 +100,11 @@ export function QuizScreen({ config, progress, onAnswer, onFinish, onExit }: Pro
     (id: string) => {
       if (pickedId !== null) return;
       dispatch({ type: 'answer', id });
-      onAnswer({ question: current, pickedId: id });
+      const given = { question: current, pickedId: id };
+      onAnswer(given);
+      if (!isCorrect(given)) {
+        logEvent(current.char.id, quizTrack(current.direction.id), { kind: 'quiz', picked: id, lookalike: isLookalike(given) });
+      }
     },
     [pickedId, current, onAnswer],
   );

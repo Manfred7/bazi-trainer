@@ -28,6 +28,7 @@ interface Props {
   onCharts: () => void;
   onCycle: () => void;
   onHistory: () => void;
+  onStats: () => void;
   onDaily: (ok: boolean | null) => void;
 }
 
@@ -61,6 +62,7 @@ export function StartScreen({
   onCharts,
   onCycle,
   onHistory,
+  onStats,
   onDaily,
 }: Props) {
   const counts = ladder(progress);
@@ -80,7 +82,7 @@ export function StartScreen({
   const reset = () => {
     if (
       window.confirm(
-        'Сбросить всё? Знаки вернутся к знакомству, звание — к «Новичку»; сотрутся история званий, дни столпа и сохранённые карты, открытые колоды закроются. Останутся только тема и скорость анимации.',
+        'Сбросить всё? Знаки вернутся к знакомству, звание — к «Новичку»; сотрутся история званий, дни столпа, сохранённые карты и статистика, открытые колоды закроются. Останутся только тема и скорость анимации.',
       )
     )
       onResetProgress();
@@ -143,6 +145,9 @@ export function StartScreen({
           Цикл 60
         </button>
       </div>
+      <button className="btn btn--wide" onClick={onStats}>
+        Моя статистика
+      </button>
 
       <details className="panel free">
         <summary>

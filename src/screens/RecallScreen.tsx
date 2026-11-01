@@ -4,6 +4,7 @@ import { SessionTop } from '../components/SessionTop';
 import { type BoardHandle, WritingBoard } from '../components/WritingBoard';
 import type { BaziChar } from '../data/characters';
 import { PASS_MISTAKES, type WriteResult, isPass, pickNext } from '../logic/session';
+import { logEvent, logStrokeMistake } from '../logic/stats';
 
 interface Props {
   /** Из каких знаков спрашивать */
@@ -35,6 +36,7 @@ export function RecallScreen({ pool, length, levelOf, onResult, onFinish, onExit
     setMistakes(m);
     setResult(r);
     onResult(r);
+    logEvent(char.id, 'recall', { kind: 'done', mistakes: r.mistakes });
   };
 
   const next = () => {
@@ -52,6 +54,7 @@ export function RecallScreen({ pool, length, levelOf, onResult, onFinish, onExit
   const hint = () => {
     board.current?.hint();
     setHints((h) => h + 1);
+    logEvent(char.id, 'recall', { kind: 'hint', stroke: written });
   };
 
   useEffect(() => {
@@ -76,7 +79,10 @@ export function RecallScreen({ pool, length, levelOf, onResult, onFinish, onExit
           hintAfterMisses={false}
           attempt={0}
           onStroke={setWritten}
-          onMistake={setMistakes}
+          onMistake={(s) => {
+            setMistakes(s.totalMistakes);
+            logStrokeMistake(char, 'recall', s);
+          }}
           onComplete={complete}
         />
 
