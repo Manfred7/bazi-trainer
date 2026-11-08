@@ -66,7 +66,7 @@ export function RecallScreen({ pool, length, levelOf, onResult, onFinish, onExit
   }, [onExit]);
 
   return (
-    <main className="screen study">
+    <main className="screen study" data-screen="recall">
       <SessionTop done={results.length + (result ? 1 : 0)} total={length} onExit={onExit} />
 
       <section key={`${results.length}-${char.id}`} className="card card--study">
@@ -100,11 +100,11 @@ export function RecallScreen({ pool, length, levelOf, onResult, onFinish, onExit
             ▶ Порядок черт
           </button>
         ) : (
-          <button className="btn" onClick={hint}>
+          <button className="btn" data-testid="hint" onClick={hint}>
             Подсказка
           </button>
         )}
-        <button className="btn btn--primary" onClick={next} disabled={!result}>
+        <button className="btn btn--primary" data-testid="next" onClick={next} disabled={!result}>
           {last ? 'Итоги' : 'Дальше →'}
         </button>
       </div>

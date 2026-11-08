@@ -16,7 +16,7 @@ export function HistoryScreen({ awards, rank, progress, onExit }: Props) {
   const { next, share, steps, days, chains } = rank;
 
   return (
-    <main className="screen">
+    <main className="screen" data-screen="history">
       <div className="quiz__top">
         <button className="icon-btn" onClick={onExit} aria-label="В меню">
           ←

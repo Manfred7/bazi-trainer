@@ -1,5 +1,6 @@
 import type { StrokeData } from 'hanzi-writer';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { registerBoard } from '../logic/e2e';
 import { PracticeGrid } from './PracticeGrid';
 import { type Guide, GuideOver, GuidePeek, GuideUnder } from './StrokeGuide';
 import { useHanziWriter } from './useHanziWriter';
@@ -83,6 +84,12 @@ export const WritingBoard = forwardRef<BoardHandle, Props>(function WritingBoard
     return () => writer.cancelQuiz();
   }, [writer, attempt, hintAfterMisses]);
 
+  // Тестовый мост (e2e/): координаты черт этой клетки
+  useEffect(
+    () => registerBoard({ kind: 'write', hanzi, group: () => target.current?.querySelector<SVGGElement>('svg g[transform]') ?? null }),
+    [hanzi, target],
+  );
+
   useEffect(() => {
     if (!flash) return;
     const t = setTimeout(() => setFlash(0), FLASH_MS);
@@ -99,7 +106,7 @@ export const WritingBoard = forwardRef<BoardHandle, Props>(function WritingBoard
   );
 
   return (
-    <div ref={ref} className="player__stage">
+    <div ref={ref} className="player__stage" data-testid="board" data-hanzi={hanzi}>
       <PracticeGrid size={size} miss={flash > 0}>
         {guide === 'half' && !outline && <GuideUnder hanzi={hanzi} size={size} />}
         <div ref={target} className="writer" />

@@ -159,6 +159,8 @@ npm run dev -- --host 127.0.0.1
 - `npm run strokes` — пересобрать данные черт.
 - `npm test` — тесты (vitest): календарь и логика пути. Запускаются и при выкладке.
 
+Тесты: `npm test` — логика (Vitest + fast-check), `npm run e2e:mac` — экраны (Playwright) на Mac mini, `npm run e2e` — экраны локально. Архитектура, контракт `data-*` и правила — [docs/testing.md](docs/testing.md).
+
 Публикация: при пуше в `main` GitHub Actions (`.github/workflows/deploy.yml`) собирает проект и выкладывает его на GitHub Pages и на tiangan.ru (хостинг Beget: сборка с `BASE_PATH=/`, rsync по SSH-ключу из секрета `BEGET_SSH_KEY`).
 
 Устройство:

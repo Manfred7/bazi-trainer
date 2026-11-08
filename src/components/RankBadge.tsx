@@ -28,7 +28,7 @@ export function RankCard({ progress, onHistory }: { progress: RankProgress; onHi
 
   return (
     <section className="panel rank">
-      <button className="rank__history" onClick={onHistory} aria-label="Мой путь: когда получены звания">
+      <button className="rank__history" data-testid="history" onClick={onHistory} aria-label="Мой путь: когда получены звания">
         Мой путь ›
       </button>
       <button className="rank__head" onClick={() => setOpen(!open)} aria-expanded={open}>

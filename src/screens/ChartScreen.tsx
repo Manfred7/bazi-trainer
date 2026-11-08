@@ -26,7 +26,7 @@ export function ChartScreen({ journal, progress, onChange, onLearn, onExit }: Pr
   };
 
   return (
-    <main className="screen">
+    <main className="screen" data-screen="charts">
       <div className="quiz__top">
         <button className="icon-btn" onClick={onExit} aria-label="В меню">
           ←

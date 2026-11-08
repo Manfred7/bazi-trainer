@@ -97,7 +97,7 @@ export function StatsScreen({ progress, onExit }: Props) {
   const fewer = s.week.rate !== null && s.prevWeek.rate !== null && s.week.rate < s.prevWeek.rate;
 
   return (
-    <main className="screen stats">
+    <main className="screen stats" data-screen="stats">
       <div className="quiz__top">
         <button className="icon-btn" onClick={onExit} aria-label="В меню">
           ←

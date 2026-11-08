@@ -14,6 +14,7 @@ export function CharPicker({ onPick }: { onPick: (c: BaziChar) => void }) {
             {g.chars.map((c) => (
               <button
                 key={c.id}
+                data-char={c.id}
                 className={`char-pick__btn hanzi el-${c.element}`}
                 onClick={() => onPick(c)}
                 aria-label={`${c.ru} (${c.pinyin})`}

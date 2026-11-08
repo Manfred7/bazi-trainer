@@ -8,7 +8,7 @@ interface Props {
 export function SessionTop({ done, total, onExit }: Props) {
   return (
     <div className="quiz__top">
-      <button className="icon-btn" onClick={onExit} aria-label="В меню">
+      <button className="icon-btn" data-testid="exit" onClick={onExit} aria-label="В меню">
         ←
       </button>
       <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}>

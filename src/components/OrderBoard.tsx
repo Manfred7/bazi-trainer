@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { strokeData } from '../data/strokes';
+import { registerBoard } from '../logic/e2e';
 import { distanceToMedian, placement } from './geometry';
 import { PracticeGrid } from './PracticeGrid';
 import { useSquareSize } from './useSquareSize';
@@ -29,6 +30,9 @@ export function OrderBoard({ hanzi, written, onAnswer, reveal }: Props) {
   const { strokes, medians } = strokeData(hanzi);
   const geo = placement(size);
   const [wrong, setWrong] = useState<{ stroke: number; key: number } | null>(null);
+  const svg = useRef<SVGSVGElement>(null);
+  // Тестовый мост (e2e/): координаты черт этой клетки
+  useEffect(() => registerBoard({ kind: 'order', hanzi, group: () => svg.current?.querySelector('g') ?? null }), [hanzi]);
 
   const tap = (e: React.PointerEvent<SVGSVGElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
@@ -56,7 +60,7 @@ export function OrderBoard({ hanzi, written, onAnswer, reveal }: Props) {
   return (
     <div ref={ref} className="player__stage">
       <PracticeGrid size={size}>
-        <svg className="order" width={size} height={size} onPointerDown={tap} role="img" aria-label="Знак: нажмите следующую черту">
+        <svg ref={svg} className="order" data-testid="order-board" data-written={written} width={size} height={size} onPointerDown={tap} role="img" aria-label="Знак: нажмите следующую черту">
           <g transform={geo.transform}>
             {strokes.map((d, i) => (
               <path

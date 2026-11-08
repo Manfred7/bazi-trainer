@@ -34,7 +34,7 @@ export function StudyScreen({ deck, speed, onSpeed, onExit }: Props) {
   }, [n, onExit]);
 
   return (
-    <main className="screen study">
+    <main className="screen study" data-screen="study">
       <SessionTop done={index + 1} total={n} onExit={onExit} />
 
       <section

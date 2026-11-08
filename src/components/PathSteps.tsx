@@ -157,13 +157,22 @@ export function WriteStep({
       />
       {/* Статус и кнопки — в одну строку, чтобы клетке осталось больше места */}
       <div className="step-row">
-        <p className={`player__status ${result && !practice ? (result.ok ? 'is-ok' : 'is-bad') : ''}`}>{status}</p>
+        <p
+          className={`player__status ${result && !practice ? (result.ok ? 'is-ok' : 'is-bad') : ''}`}
+          data-testid="step-status"
+          data-state={peek ? 'peek' : !result ? 'writing' : result.ok ? 'ok' : 'fail'}
+          data-written={written}
+          data-mistakes={result ? result.mistakes : score}
+        >
+          {status}
+        </p>
         <div className="step-row__actions">
           {peek ? null : writing ? (
             <>
               {(written > 0 || mistakes > 0) && (
                 <button
                   className="btn btn--small btn--icon"
+                  data-testid="restart"
                   onClick={restart}
                   aria-label="Заново"
                   title={result ? 'Заново' : 'Заново — ошибки останутся в счёте'}
@@ -173,6 +182,7 @@ export function WriteStep({
               )}
               <button
                 className="btn btn--small"
+                data-testid="hint"
                 onClick={hint}
                 title={stage === 'trace' || result ? 'Подсветить черту, которую ждёт проверка' : 'Подсказка считается ошибкой'}
               >
@@ -182,11 +192,11 @@ export function WriteStep({
           ) : (
             <>
               {practiceAfter && (
-                <button className="btn btn--small" onClick={restart}>
+                <button className="btn btn--small" data-testid="again" onClick={restart}>
                   ↺ Ещё раз
                 </button>
               )}
-              <button className="btn btn--small btn--icon" onClick={() => board.current?.animate()} aria-label="Порядок черт" title="Порядок черт">
+              <button className="btn btn--small btn--icon" data-testid="animate" onClick={() => board.current?.animate()} aria-label="Порядок черт" title="Порядок черт">
                 ▶
               </button>
             </>
@@ -228,7 +238,12 @@ export function OrderStep({ char, onResult }: { char: BaziChar; onResult: (ok: b
       <CharacterAsk char={char} />
       <OrderBoard hanzi={char.hanzi} written={written} reveal={reveal} onAnswer={answer} />
       <div className="step-row">
-        <p className={`player__status ${done ? (mistakes ? 'is-bad' : 'is-ok') : ''}`}>
+        <p
+          className={`player__status ${done ? (mistakes ? 'is-bad' : 'is-ok') : ''}`}
+          data-testid="step-status"
+          data-state={done ? 'done' : 'asking'}
+          data-mistakes={mistakes}
+        >
           {done
             ? `${mistakes ? `Готово · ошибок: ${mistakes}` : 'Всё верно'} · ${written < total ? `черта ${written + 1} из ${total}` : 'знак собран'}`
             : `Вопрос ${written - start + 1} из ${asked} · черта ${written + 1} из ${total}${mistakes ? ` · ошибок: ${mistakes}` : ''}`}

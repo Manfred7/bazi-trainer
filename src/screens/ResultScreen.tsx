@@ -37,7 +37,7 @@ export function ResultScreen({ kind, results, summary, onRetryMistakes, onRestar
   const hardest = [...failed.values()].sort((a, b) => b.mistakes - a.mistakes);
 
   return (
-    <main className="screen result">
+    <main className="screen result" data-screen="result">
       <section className="result__score">
         <div className="result__pct">
           {passed}/{results.length}
@@ -96,7 +96,7 @@ export function ResultScreen({ kind, results, summary, onRetryMistakes, onRestar
         <button className={`btn btn--wide ${hardest.length ? '' : 'btn--primary'}`} onClick={onRestart}>
           Ещё сессия
         </button>
-        <button className="btn btn--ghost btn--wide" onClick={onMenu}>
+        <button className="btn btn--ghost btn--wide" data-testid="menu" onClick={onMenu}>
           В меню
         </button>
       </div>

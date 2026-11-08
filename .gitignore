@@ -26,3 +26,8 @@ dist-ssr
 # Прописи — материал с ограничением копирования, в репозиторий не кладём
 *.pdf
 dist-beget
+dist-e2e
+test-results
+playwright-report
+playwright-report-mac
+test-results-mac

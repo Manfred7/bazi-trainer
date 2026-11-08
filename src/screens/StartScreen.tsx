@@ -99,7 +99,7 @@ export function StartScreen({
   };
 
   return (
-    <main className="screen start">
+    <main className="screen start" data-screen="start">
       <header className="start__hero">
         <div className="start__glyphs hanzi" aria-hidden>
           甲乙丙丁 子丑寅卯
@@ -130,7 +130,7 @@ export function StartScreen({
             <Seal key={c.id} char={c} progress={progress} />
           ))}
         </div>
-        <button className="btn btn--primary btn--wide" onClick={onPath}>
+        <button className="btn btn--primary btn--wide" data-testid="path-start" onClick={onPath}>
           Продолжить путь
         </button>
         {counts.done > 0 && (
@@ -172,18 +172,18 @@ export function StartScreen({
       )}
 
       <div className="study__nav">
-        <button className="btn" onClick={onCharts}>
+        <button className="btn" data-testid="charts" onClick={onCharts}>
           {journal.charts.length ? 'Мои карты' : 'Моя карта'}
         </button>
-        <button className="btn" onClick={onCycle}>
+        <button className="btn" data-testid="cycle" onClick={onCycle}>
           Цикл 60
         </button>
       </div>
-      <button className="btn btn--wide" onClick={onStats}>
+      <button className="btn btn--wide" data-testid="stats" onClick={onStats}>
         Моя статистика
       </button>
 
-      <details className="panel free">
+      <details className="panel free" data-testid="free">
         <summary>
           <h2>Свободная практика</h2>
         </summary>
@@ -204,6 +204,7 @@ export function StartScreen({
             {MODES.map((m) => (
               <button
                 key={m.id}
+                data-mode={m.id}
                 role="radio"
                 aria-checked={mode === m.id}
                 className={mode === m.id ? 'is-on' : ''}
@@ -237,6 +238,7 @@ export function StartScreen({
                     aria-checked={on}
                     disabled={!open}
                     className={`deck ${on ? 'is-on' : ''}`}
+                    data-deck={d.id}
                     onClick={() => onChange({ ...settings, deckId: d.id })}
                   >
                     <span className="deck__main">
@@ -281,6 +283,7 @@ export function StartScreen({
                 <button
                   key={n}
                   role="radio"
+                  data-length={n}
                   aria-checked={settings.length === n}
                   className={settings.length === n ? 'is-on' : ''}
                   onClick={() => onChange({ ...settings, length: n })}
@@ -315,6 +318,7 @@ export function StartScreen({
                   <button
                     key={n}
                     role="radio"
+                    data-quiz-length={n}
                     aria-checked={settings.quizLength === n}
                     className={settings.quizLength === n ? 'is-on' : ''}
                     onClick={() => onChange({ ...settings, quizLength: n })}
@@ -327,7 +331,7 @@ export function StartScreen({
           </>
         )}
 
-        <button className="btn btn--primary btn--wide" disabled={!canStart} onClick={onStart}>
+        <button className="btn btn--primary btn--wide" data-testid="free-start" disabled={!canStart} onClick={onStart}>
           {START_LABELS[mode]}: {deck.title}
         </button>
         {!canStart && <p className="hint">Выберите направление, подходящее для этой колоды</p>}
@@ -348,6 +352,7 @@ export function StartScreen({
           {THEMES.map((t) => (
             <button
               key={t.id}
+              data-theme-option={t.id}
               role="radio"
               aria-checked={settings.theme === t.id}
               className={settings.theme === t.id ? 'is-on' : ''}

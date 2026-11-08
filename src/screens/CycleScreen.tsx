@@ -18,7 +18,7 @@ export function CycleScreen({ progress, chartPairs, onExit }: Props) {
   const open = SIXTY.filter((p) => pairOpen(progress, p)).length;
 
   return (
-    <main className="screen">
+    <main className="screen" data-screen="cycle">
       <div className="quiz__top">
         <button className="icon-btn" onClick={onExit} aria-label="В меню">
           ←

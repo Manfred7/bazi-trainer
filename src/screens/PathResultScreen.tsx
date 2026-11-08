@@ -27,7 +27,7 @@ export function PathResultScreen({ before, progress, onAgain, onMenu }: Props) {
   const paperNext = moves.some((m) => m.to === 'paper');
 
   return (
-    <main className="screen result">
+    <main className="screen result" data-screen="path-result">
       <section className="result__score">
         <div className="result__pct">{up}</div>
         <p className="muted">{movedLabel(up)} по пути</p>
@@ -69,10 +69,10 @@ export function PathResultScreen({ before, progress, onAgain, onMenu }: Props) {
       </section>
 
       <div className="result__actions">
-        <button className="btn btn--primary btn--wide" onClick={onAgain}>
+        <button className="btn btn--primary btn--wide" data-testid="path-again" onClick={onAgain}>
           Ещё шаг по пути
         </button>
-        <button className="btn btn--ghost btn--wide" onClick={onMenu}>
+        <button className="btn btn--ghost btn--wide" data-testid="menu" onClick={onMenu}>
           В меню
         </button>
       </div>

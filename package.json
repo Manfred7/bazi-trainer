@@ -11,7 +11,10 @@
     "preview": "vite preview",
     "icons": "pwa-assets-generator",
     "strokes": "node scripts/build-strokes.mjs",
-    "icon": "node scripts/build-icon.mjs && pwa-assets-generator"
+    "icon": "node scripts/build-icon.mjs && pwa-assets-generator",
+    "e2e": "playwright test",
+    "e2e:report": "playwright show-report",
+    "e2e:mac": "pwsh -NoProfile -File scripts/e2e-mac.ps1"
   },
   "dependencies": {
     "hanzi-writer": "^3.7.3",
@@ -20,14 +23,17 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
+    "@playwright/test": "^1.65.0",
     "@types/node": "^20.19.43",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vite-pwa/assets-generator": "^0.2.6",
     "@vitejs/plugin-react": "^4.3.3",
     "eslint": "^9.13.0",
+    "eslint-plugin-playwright": "^2.12.2",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",
+    "fast-check": "^4.10.2",
     "globals": "^15.11.0",
     "hanzi-writer-data": "^2.0.1",
     "typescript": "~5.6.2",

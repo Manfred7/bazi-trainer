@@ -81,7 +81,7 @@ export function PathScreen({ slots, progress, speed, onStep, onOrder, onFinish, 
   const move = recorded && !slot.order ? moveOf(stage, stageOf(progress, slot.char.id), !!slot.review) : null;
 
   return (
-    <main className="screen study path">
+    <main className="screen study path" data-screen="path" data-stage={slot.order ? 'order' : stage} data-char={slot.char.id}>
       <SessionTop done={index + (recorded ? 1 : 0)} total={slots.length} onExit={onExit} />
 
       {slot.order ? (
@@ -130,6 +130,7 @@ export function PathScreen({ slots, progress, speed, onStep, onOrder, onFinish, 
         {stage === 'intro' && !slot.order ? (
           <button
             className="btn btn--primary"
+            data-testid="next"
             onClick={() => {
               record(true);
               next();
@@ -138,7 +139,7 @@ export function PathScreen({ slots, progress, speed, onStep, onOrder, onFinish, 
             Понятно, обводить →
           </button>
         ) : (
-          <button className="btn btn--primary" onClick={next} disabled={!recorded}>
+          <button className="btn btn--primary" data-testid="next" onClick={next} disabled={!recorded}>
             {last ? 'Итоги' : 'Дальше →'}
           </button>
         )}

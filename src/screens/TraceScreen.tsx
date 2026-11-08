@@ -71,7 +71,7 @@ export function TraceScreen({ chars, onResult, onFinish, onExit }: Props) {
   }, [onExit]);
 
   return (
-    <main className="screen study">
+    <main className="screen study" data-screen="trace">
       <SessionTop done={index + (done ? 1 : 0)} total={chars.length} onExit={onExit} />
 
       <section key={char.id} className="card card--study">
@@ -99,10 +99,10 @@ export function TraceScreen({ chars, onResult, onFinish, onExit }: Props) {
       </section>
 
       <div className="study__nav">
-        <button className="btn" onClick={again}>
+        <button className="btn" data-testid="restart" onClick={again}>
           ↺ Заново
         </button>
-        <button className="btn btn--primary" onClick={next} disabled={results.length <= index}>
+        <button className="btn btn--primary" data-testid="next" onClick={next} disabled={results.length <= index}>
           {last ? 'Итоги' : 'Дальше →'}
         </button>
       </div>

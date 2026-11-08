@@ -1,30 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { CharPicker } from '../components/CharPicker';
 import { GLANCE_FIRST_MS, IntroStep, OrderStep, WriteStep } from '../components/PathSteps';
 import { SessionTop } from '../components/SessionTop';
 import type { BaziChar } from '../data/characters';
 import { strokeCount } from '../data/strokes';
-import { isPass, PASS_MISTAKES } from '../logic/session';
+import { drillClean, drillReducer, drillStart, drillSteps } from '../logic/drill';
+import { PASS_MISTAKES } from '../logic/session';
 import type { Speed } from '../logic/settings';
-
-/**
- * Свободная практика: один знак по всем шагам подряд — от знакомства до письма по памяти.
- * Шаг засчитан, если ошибок не больше PASS_MISTAKES, иначе его повторяют. На прогресс пути не влияет.
- */
-type StepId = 'intro' | 'order' | 'trace' | 'half' | 'glance' | 'recall';
-
-const STEPS: { id: StepId; label: string; prompt: string }[] = [
-  { id: 'intro', label: 'Знакомство', prompt: 'Посмотрите порядок черт' },
-  { id: 'order', label: 'Какая черта следующая?', prompt: 'Нажмите на черту, которая идёт следующей' },
-  { id: 'trace', label: 'Обводка', prompt: 'Обведите знак по порядку черт' },
-  { id: 'half', label: 'Полуконтур', prompt: 'Первые черты — по контуру, остальные — сами' },
-  { id: 'glance', label: 'Взгляни и напиши', prompt: 'Запомните знак — скоро он исчезнет' },
-  { id: 'recall', label: 'Финал: по памяти', prompt: 'Напишите знак по памяти, без подсказок' },
-];
-
-/** У «Какая черта следующая?» должно быть о чём спросить: знакам из 1–2 черт шаг не нужен */
-const ORDER_MIN_STROKES = 3;
-const stepsFor = (c: BaziChar) => STEPS.filter((s) => s.id !== 'order' || strokeCount(c.hanzi) >= ORDER_MIN_STROKES);
 
 interface Props {
   char: BaziChar;
@@ -32,50 +14,17 @@ interface Props {
   onExit: () => void;
 }
 
+/** Свободная практика: один знак по всем шагам подряд; правило шагов — logic/drill.ts */
 export function DrillScreen({ char: first, speed, onExit }: Props) {
   const [char, setChar] = useState(first);
-  /** pick — выбор другого знака после итогов */
-  const [phase, setPhase] = useState<'steps' | 'result' | 'pick'>('steps');
-  const [index, setIndex] = useState(0);
-  /** Ошибки каждой попытки по шагам: [шаг][попытка] */
-  const [tries, setTries] = useState<number[][]>([]);
-  /** Попытка шага: смена перезапускает шаг с нуля */
-  const [attempt, setAttempt] = useState(0);
-  /** Итог текущей попытки; null — шаг ещё идёт */
-  const [current, setCurrent] = useState<{ ok: boolean; mistakes: number } | null>(null);
-
-  const steps = stepsFor(char);
-  const step = steps[index];
-  const last = index === steps.length - 1;
+  const [picking, setPicking] = useState(false);
+  /** Новый прогон (другой знак или «ещё раз»): смена key сбрасывает состояние шагов */
+  const [run, setRun] = useState(0);
 
   const start = (c: BaziChar) => {
     setChar(c);
-    setPhase('steps');
-    setIndex(0);
-    setTries([]);
-    setAttempt((a) => a + 1);
-    setCurrent(null);
-  };
-
-  const result = (ok: boolean, mistakes: number) => {
-    setCurrent({ ok, mistakes });
-    setTries((t) => {
-      const next = [...t];
-      next[index] = [...(next[index] ?? []), mistakes];
-      return next;
-    });
-  };
-
-  const next = () => {
-    setCurrent(null);
-    setAttempt((a) => a + 1);
-    if (last) return setPhase('result');
-    setIndex(index + 1);
-  };
-
-  const retry = () => {
-    setCurrent(null);
-    setAttempt((a) => a + 1);
+    setPicking(false);
+    setRun((r) => r + 1);
   };
 
   useEffect(() => {
@@ -86,9 +35,9 @@ export function DrillScreen({ char: first, speed, onExit }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onExit]);
 
-  if (phase === 'pick') {
+  if (picking) {
     return (
-      <main className="screen">
+      <main className="screen" data-screen="drill-pick">
         <SessionTop done={0} total={1} onExit={onExit} />
         <section className="panel">
           <h2>Какой знак пройти?</h2>
@@ -98,13 +47,45 @@ export function DrillScreen({ char: first, speed, onExit }: Props) {
     );
   }
 
-  if (phase === 'result') {
-    const clean = steps.filter((_, i) => tries[i]?.length === 1).length;
+  return (
+    <DrillRun
+      key={`${char.id}-${run}`}
+      char={char}
+      speed={speed}
+      onAgain={() => start(char)}
+      onOther={() => setPicking(true)}
+      onExit={onExit}
+    />
+  );
+}
+
+function DrillRun({
+  char,
+  speed,
+  onAgain,
+  onOther,
+  onExit,
+}: {
+  char: BaziChar;
+  speed: Speed;
+  onAgain: () => void;
+  onOther: () => void;
+  onExit: () => void;
+}) {
+  const steps = drillSteps(strokeCount(char.hanzi));
+  const [state, dispatch] = useReducer(drillReducer, steps.length, drillStart);
+  const { index, tries, current, attempt } = state;
+  const step = steps[index];
+  const last = index === steps.length - 1;
+  const result = (mistakes: number) => dispatch({ type: 'result', mistakes });
+
+  if (state.done) {
+    const clean = drillClean(state);
     return (
-      <main className="screen result">
+      <main className="screen result" data-screen="drill-result" data-char={char.id}>
         <section className="result__score">
           <div className={`result__pct hanzi el-${char.element} drill__glyph`}>{char.hanzi}</div>
-          <p className="muted">
+          <p className="muted" data-testid="drill-summary">
             {char.ru} · {char.pinyin} — все шаги пройдены
             {clean === steps.length ? ', каждый с первого раза' : `, с первого раза — ${clean} из ${steps.length}`}
           </p>
@@ -117,7 +98,7 @@ export function DrillScreen({ char: first, speed, onExit }: Props) {
               const t = tries[i] ?? [];
               const passed = t[t.length - 1] ?? 0;
               return (
-                <li key={s.id}>
+                <li key={s.id} data-step={s.id} data-tries={t.join(',')}>
                   <span>{s.label}</span>
                   <span className={t.length > 1 ? 'mistakes__count' : 'drill__ok'}>
                     {s.id === 'intro'
@@ -135,13 +116,13 @@ export function DrillScreen({ char: first, speed, onExit }: Props) {
         </section>
 
         <div className="result__actions">
-          <button className="btn btn--primary btn--wide" onClick={() => start(char)}>
+          <button className="btn btn--primary btn--wide" data-testid="drill-again" onClick={onAgain}>
             Этот знак ещё раз
           </button>
-          <button className="btn btn--wide" onClick={() => setPhase('pick')}>
+          <button className="btn btn--wide" data-testid="drill-other" onClick={onOther}>
             Другой знак
           </button>
-          <button className="btn btn--ghost btn--wide" onClick={onExit}>
+          <button className="btn btn--ghost btn--wide" data-testid="menu" onClick={onExit}>
             В меню
           </button>
         </div>
@@ -153,10 +134,17 @@ export function DrillScreen({ char: first, speed, onExit }: Props) {
   const tryNo = (tries[index]?.length ?? 0) + (current ? 0 : 1);
 
   return (
-    <main className="screen study path">
+    <main
+      className="screen study path"
+      data-screen="drill"
+      data-char={char.id}
+      data-step={step.id}
+      data-try={tryNo}
+      data-result={current ? (current.ok ? 'ok' : 'fail') : 'pending'}
+    >
       <SessionTop done={index + (current?.ok ? 1 : 0)} total={steps.length} onExit={onExit} />
 
-      <section key={`${char.id}-${index}-${attempt}`} className="card card--study">
+      <section key={`${index}-${attempt}`} className="card card--study">
         <div className="stage-chip">
           <span>
             {step.label}
@@ -174,7 +162,7 @@ export function DrillScreen({ char: first, speed, onExit }: Props) {
         {step.id === 'intro' ? (
           <IntroStep char={char} speed={speed} />
         ) : step.id === 'order' ? (
-          <OrderStep char={char} onResult={(_, m) => result(isPass(m), m)} />
+          <OrderStep char={char} onResult={(_, m) => result(m)} />
         ) : (
           <WriteStep
             char={char}
@@ -182,7 +170,7 @@ export function DrillScreen({ char: first, speed, onExit }: Props) {
             numbered={false}
             glanceMs={GLANCE_FIRST_MS}
             practiceAfter={false}
-            onResult={(ok, _, m) => result(ok, m)}
+            onResult={(_, __, m) => result(m)}
           />
         )}
       </section>
@@ -191,19 +179,20 @@ export function DrillScreen({ char: first, speed, onExit }: Props) {
         {step.id === 'intro' ? (
           <button
             className="btn btn--primary"
+            data-testid="next"
             onClick={() => {
-              result(true, 0);
-              next();
+              result(0);
+              dispatch({ type: 'next' });
             }}
           >
             Понятно, дальше →
           </button>
         ) : failed ? (
-          <button className="btn btn--primary" onClick={retry}>
+          <button className="btn btn--primary" data-testid="retry-step" onClick={() => dispatch({ type: 'retry' })}>
             ↺ Повторить шаг
           </button>
         ) : (
-          <button className="btn btn--primary" onClick={next} disabled={!current}>
+          <button className="btn btn--primary" data-testid="next" onClick={() => dispatch({ type: 'next' })} disabled={!current}>
             {last ? 'Итоги' : 'Дальше →'}
           </button>
         )}

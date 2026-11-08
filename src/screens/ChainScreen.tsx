@@ -83,7 +83,7 @@ export function ChainScreen({ chain, cleanDays, needDays, onDone, onAgain, onExi
   };
 
   return (
-    <main className="screen study path">
+    <main className="screen study path" data-screen="chain">
       <SessionTop done={scores.length} total={cells.length} onExit={onExit} />
 
       <section className="card card--study">

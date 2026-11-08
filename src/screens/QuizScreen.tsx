@@ -137,7 +137,7 @@ export function QuizScreen({ config, progress, onAnswer, onFinish, onExit }: Pro
   const glyphs = current.options.some((o) => o.hanzi);
 
   return (
-    <main className="screen quiz">
+    <main className="screen quiz" data-screen="quiz" data-direction={current.direction.id} data-answer={current.answerId} data-revealed={revealed} data-done={answers.length}>
       <SessionTop done={answers.length} total={config.length} onExit={onExit} />
 
       <section
@@ -171,7 +171,7 @@ export function QuizScreen({ config, progress, onAnswer, onFinish, onExit }: Pro
             else cls += ' answer--dim';
           }
           return (
-            <button key={opt.id} className={cls} disabled={revealed} onClick={() => answer(opt.id)}>
+            <button key={opt.id} className={cls} data-option={opt.id} disabled={revealed} onClick={() => answer(opt.id)}>
               <span className="answer__key" aria-hidden>
                 {i + 1}
               </span>
@@ -193,7 +193,7 @@ export function QuizScreen({ config, progress, onAnswer, onFinish, onExit }: Pro
 
       <div className="quiz__footer">
         {revealed && !correct && (
-          <button className="btn btn--primary btn--wide" onClick={next} autoFocus>
+          <button className="btn btn--primary btn--wide" data-testid="next" onClick={next} autoFocus>
             Дальше
           </button>
         )}
