@@ -23,7 +23,8 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      # Без скриптов установки: sharp (только для генерации иконок) качает libvips с GitHub Releases и падает по таймауту
+      - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm test
       - run: npm run build
@@ -62,7 +63,7 @@ jobs:
           node-version: 20
           cache: npm
       - if: env.HAS_KEY == 'true'
-        run: npm ci
+        run: npm ci --ignore-scripts
       - if: env.HAS_KEY == 'true'
         run: npm run build
         env:
