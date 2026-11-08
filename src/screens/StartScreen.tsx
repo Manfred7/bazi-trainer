@@ -1,7 +1,8 @@
+import { CharPicker } from '../components/CharPicker';
 import { DailyCard } from '../components/DailyCard';
 import { RankCard } from '../components/RankBadge';
 import { Seal } from '../components/Seal';
-import { CHARACTERS } from '../data/characters';
+import { type BaziChar, CHARACTERS } from '../data/characters';
 import { DECKS, type Deck, deckById, isAvailable } from '../logic/decks';
 import { useInstall } from '../logic/install';
 import { todayIso } from '../logic/calendar';
@@ -31,6 +32,8 @@ interface Props {
   onCycle: () => void;
   onHistory: () => void;
   onStats: () => void;
+  /** Свободная практика: один знак по всем шагам подряд */
+  onDrill: (char: BaziChar) => void;
   onDaily: (ok: boolean | null) => void;
   /** Начать цепочку: столпы этого момента или случайной даты */
   onChain: (moment: boolean) => void;
@@ -67,6 +70,7 @@ export function StartScreen({
   onCycle,
   onHistory,
   onStats,
+  onDrill,
   onDaily,
   onChain,
 }: Props) {
@@ -184,6 +188,15 @@ export function StartScreen({
           <h2>Свободная практика</h2>
         </summary>
         <p className="panel__note">Любой режим и колода вручную — прогресс общий с путём.</p>
+
+        <section className="panel">
+          <h2>Один знак — все шаги</h2>
+          <p className="panel__note">
+            Знакомство → какая черта следующая → обводка → полуконтур → взгляни и напиши → по памяти. Шаг засчитан, если
+            ошибок не больше {PASS_MISTAKES}, иначе его повторяют. На прогресс пути не влияет.
+          </p>
+          <CharPicker onPick={onDrill} />
+        </section>
 
         <section className="panel">
           <h2>Режим</h2>

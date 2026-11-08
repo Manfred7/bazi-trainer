@@ -27,6 +27,7 @@ import { ChartScreen } from './screens/ChartScreen';
 import { CycleScreen } from './screens/CycleScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
 import { PathResultScreen } from './screens/PathResultScreen';
+import { DrillScreen } from './screens/DrillScreen';
 import { PathScreen } from './screens/PathScreen';
 import { QuizScreen } from './screens/QuizScreen';
 import { RecallScreen } from './screens/RecallScreen';
@@ -65,7 +66,8 @@ type Screen =
   | { name: 'charts' }
   | { name: 'cycle' }
   | { name: 'history' }
-  | { name: 'stats' };
+  | { name: 'stats' }
+  | { name: 'drill'; char: BaziChar; run: number };
 
 function deckMastery(p: Progress, mode: SessionMode, deck: Deck, directions: Direction[]) {
   return mode === 'quiz' ? quizMastery(p, deck.chars, directions) : mastery(p, deck.chars, mode);
@@ -238,6 +240,7 @@ export default function App() {
             onCycle={() => setScreen({ name: 'cycle' })}
             onHistory={() => setScreen({ name: 'history' })}
             onStats={() => setScreen({ name: 'stats' })}
+            onDrill={(char) => setScreen({ name: 'drill', char, run: Date.now() })}
             onDaily={daily}
             onChain={(moment) => beginChain(moment ? momentChain() : randomChain())}
           />
@@ -275,6 +278,8 @@ export default function App() {
         );
       case 'history':
         return <HistoryScreen awards={journal.awards} rank={rank} progress={progress} onExit={toStart} />;
+      case 'drill':
+        return <DrillScreen key={screen.run} char={screen.char} speed={settings.speed} onExit={toStart} />;
       case 'stats':
         return <StatsScreen progress={progress} onExit={toStart} />;
       case 'cycle':

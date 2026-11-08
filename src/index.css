@@ -1470,6 +1470,55 @@ input:focus-visible {
   font-weight: 600;
 }
 
+/* ---------- Один знак — все шаги ---------- */
+
+.char-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.char-pick__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.char-pick__grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+.char-pick__btn {
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--el);
+  font-size: 1.6rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s, border-color 0.15s;
+}
+.char-pick__btn:hover {
+  border-color: var(--el);
+}
+.char-pick__btn:active {
+  transform: scale(0.95);
+}
+.drill__glyph {
+  font-size: 5rem;
+  font-weight: 400;
+  color: var(--el);
+}
+.drill__steps li > span:first-child {
+  font-weight: 500;
+}
+.drill__ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+
 /* ---------- Анимации ---------- */
 
 @keyframes card-in {
